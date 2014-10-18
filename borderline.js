@@ -2,11 +2,11 @@ function Boundless(collection) {
 
   if (collection.type) {
 
-    if (collection.type == "FeatureCollection") {
+    if (collection.type === "FeatureCollection") {
 
       this.features = collection.features;
 
-    } else if (collection.type == "Topology") {
+    } else if (collection.type === "Topology") {
 
       if (topojson && "feature" in topojson) {
 
@@ -22,7 +22,7 @@ function Boundless(collection) {
           this.features = topojson.feature(collection,collection.objects[key]);
 
           //In case it's one feature
-          if (this.features.type == "Feature") {
+          if (this.features.type && this.features.type === "Feature") {
 
             this.features = [this.features];
 
@@ -38,7 +38,7 @@ function Boundless(collection) {
 
     }
 
-  } else if (collection.isArray() && collection[0].type == "Feature") {
+  } else if (collection.isArray() && collection[0].type === "Feature") {
 
     this.features = collection;
 
@@ -80,7 +80,7 @@ Boundless.prototype.inside = function(point,feature) {
         return that.pip(point,ring);
     };
 
-    if (feature.geometry.type == "Polygon") {
+    if (feature.geometry.type === "Polygon") {
       return inRing(feature.geometry.coordinates[0]) && !feature.geometry.coordinates.slice(1).some(inRing);
     }
 
@@ -120,7 +120,7 @@ Boundless.prototype.pip = function(point, vs) {
 Boundless.prototype.bounds = function(feature) {
 
   //Don't check inner rings
-  var outer = feature.geometry.type == "Polygon" ? [feature.geometry.coordinates[0]] : feature.geometry.coordinates.map(function(f){
+  var outer = feature.geometry.type === "Polygon" ? [feature.geometry.coordinates[0]] : feature.geometry.coordinates.map(function(f){
     return f[0];
   });
 
