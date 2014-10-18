@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 12px sans-serif;
+}
+
+path {
+  stroke-width: 1px;
+  stroke: white;
+  fill: #999;
+  cursor: pointer;
+}
+
+circle {
+  opacity: 0.8;
+  fill: #f0f;
+  stroke: none;
+  cursor: pointer;
+}
+
+circle.in-state {
+  fill: lawngreen;
+}
+
+circle:hover {
+  opacity: 1;
+  stroke: black;
+  stroke-width: 1px;
+}
+
+</style>
+<body>
+<script src="borderline.js"></script>
+<script src="d3.v3.min.js"></script>
+<script>
+
+//Map dimensions (in pixels)
+var width = 600,
+    height = 349;
+
+//Map projection
+var projection = d3.geo.albersUsa()
+    .scale(730.3062176506113)
+    .translate([width/2,height/2]) //translate to center the map in view
+
+//Generate paths based on projection
+var path = d3.geo.path()
+    .projection(projection);
+
+//Create an SVG
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+//Group for the map features
+var features = svg.append("g")
+    .attr("class","features");
+
+//Create zoom/pan listener
+//Change [1,Infinity] to adjust the min/max zoom scale
+var zoom = d3.behavior.zoom()
+    .scaleExtent([1, Infinity])
+    .on("zoom",zoomed);
+
+svg.call(zoom);
+
+d3.json("us-states-with-holes.geojson",function(error,geodata) {
+
+  //Create a path for each map feature in the data
+  features.selectAll("path")
+    .data(geodata.features) //generate features from TopoJSON
+    .enter()
+    .append("path")
+    .attr("d",path);
+
+  var bl = new Boundless(geodata);
+
+  console.log(bl);
+
+  var points = d3.range(1000).map(function(){
+    var proj,ll;
+
+    while (!proj) {
+
+      ll = [
+        randBetween(-125,-66),
+        randBetween(23,50)
+      ];
+
+      proj = projection(ll);
+
+    }
+
+
+
+    return {
+      //"state": findDistrict(ll,geodata),
+      "state": bl.find(ll),
+      "x": proj[0],
+      "y": proj[1]
+    };
+
+  });
+
+  console.log(points);
+
+  features.selectAll("circle")
+    .data(points)
+    .enter()
+    .append("circle")
+      .attr("r",3)
+      .attr("cx",function(d){
+        return d.x;
+      })
+      .attr("cy",function(d){
+        return d.y;
+      })
+      .classed("in-state",function(d){
+        return d.state;
+      })
+      .on("mouseover",function(d){
+        console.log(d.state ? d.state.name : "No state");
+      });
+
+});
+
+function randBetween(a,b){
+  return a+(Math.random()*(b-a));
+}
+
+//Update map on zoom/pan
+function zoomed() {
+  features.attr("transform", "translate(" + zoom.translate() + ")scale(" + zoom.scale() + ")")
+      .selectAll("path").style("stroke-width", 1 / zoom.scale() + "px" );
+}
+
+</script>
