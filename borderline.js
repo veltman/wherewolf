@@ -38,7 +38,7 @@ function Boundless(collection) {
 
     }
 
-  } else if (collection.isArray() && collection[0].type === "Feature") {
+  } else if (Array.isArray(collection) && collection[0].type === "Feature") {
 
     this.features = collection;
 
