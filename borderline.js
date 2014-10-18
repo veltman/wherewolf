@@ -8,7 +8,7 @@ function Boundless(collection) {
 
     } else if (collection.type === "Topology") {
 
-      if (topojson && "feature" in topojson) {
+      if (typeof topojson !== "undefined" && topojson.feature) {
 
         var key;
 
@@ -19,21 +19,29 @@ function Boundless(collection) {
 
         if (key) {
 
-          this.features = topojson.feature(collection,collection.objects[key]);
+          var converted = topojson.feature(collection,collection.objects[key]);
 
           //In case it's one feature
-          if (this.features.type && this.features.type === "Feature") {
+          if (converted.type === "Feature") {
 
-            this.features = [this.features];
+            this.features = [converted];
+
+          } else {
+
+            this.features = converted.features;
 
           }
 
         } else {
-          //invalid topojson?
+
+          throw new Error("Invalid TopoJSON topology received.");
+
         }
 
       } else {
-        //Missing topojson library
+
+          throw new Error("You must include the TopoJSON client library (https://github.com/mbostock/topojson) if you're using a TopoJSON file.");
+
       }
 
     }
@@ -41,6 +49,10 @@ function Boundless(collection) {
   } else if (Array.isArray(collection) && collection[0].type === "Feature") {
 
     this.features = collection;
+
+  } else {
+
+    throw new Error("No valid GeoJSON or TopoJSON supplied.");
 
   }
 

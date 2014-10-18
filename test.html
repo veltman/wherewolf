@@ -34,6 +34,7 @@ circle:hover {
 <body>
 <script src="borderline.js"></script>
 <script src="d3.v3.min.js"></script>
+<script src="topojson.v1.min.js"></script>
 <script>
 
 //Map dimensions (in pixels)
@@ -66,7 +67,19 @@ var zoom = d3.behavior.zoom()
 
 svg.call(zoom);
 
-d3.json("us-states-with-holes.geojson",function(error,geodata) {
+function firstKey(obj) {
+  for (var key in obj.objects) {
+    return key;
+  }
+}
+
+d3.json("us-states-with-holes.topojson",function(error,geodata) {
+
+  var bl = new Boundless({});
+
+  if (geodata.type == "Topology") {
+    geodata = topojson.feature(geodata,geodata.objects[firstKey(geodata)]);
+  }
 
   //Create a path for each map feature in the data
   features.selectAll("path")
@@ -74,10 +87,6 @@ d3.json("us-states-with-holes.geojson",function(error,geodata) {
     .enter()
     .append("path")
     .attr("d",path);
-
-  var bl = new Boundless(geodata);
-
-  console.log(bl);
 
   var points = d3.range(1000).map(function(){
     var proj,ll;
@@ -103,8 +112,6 @@ d3.json("us-states-with-holes.geojson",function(error,geodata) {
     };
 
   });
-
-  console.log(points);
 
   features.selectAll("circle")
     .data(points)
