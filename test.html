@@ -14,7 +14,7 @@ path {
 }
 
 circle {
-  opacity: 0.8;
+  opacity: 0.7;
   fill: #f0f;
   stroke: none;
   cursor: pointer;
@@ -35,6 +35,7 @@ circle:hover {
 <script src="borderline.js"></script>
 <script src="d3.v3.min.js"></script>
 <script src="topojson.v1.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
 <script>
 
 //Map dimensions (in pixels)
@@ -73,9 +74,13 @@ function firstKey(obj) {
   }
 }
 
-d3.json("us-states-with-holes.topojson",function(error,geodata) {
+d3.json("us-states-with-holes.geojson",function(error,geodata) {
 
-  var bl = new Boundless({});
+  var start = (new Date()).getTime();
+
+  var bl = new Boundless(geodata);
+
+  console.log("Time to initialize (ms)",((new Date()).getTime()-start));
 
   if (geodata.type == "Topology") {
     geodata = topojson.feature(geodata,geodata.objects[firstKey(geodata)]);
@@ -83,35 +88,56 @@ d3.json("us-states-with-holes.topojson",function(error,geodata) {
 
   //Create a path for each map feature in the data
   features.selectAll("path")
-    .data(geodata.features) //generate features from TopoJSON
+    .data(geodata.features.filter(function(d){
+      return d.properties.name != "Alaska" && d.properties.name != "Hawaii";
+    })) //generate features from TopoJSON
     .enter()
     .append("path")
     .attr("d",path);
 
-  var points = d3.range(1000).map(function(){
+  var bounds = {
+    "continental": [[-125,23],[-66,50]],
+    "hawaii": [[-160.23517488150742,18.906117143691233],[-154.81895094267492,22.23295497853259]],
+    "alaska": [[-180,51.39674332956688],[-129,71.40672658657596]]
+  },
+
+  b = bounds.continental;
+
+  var points = d3.range(1500).map(function(){
     var proj,ll;
 
     while (!proj) {
 
       ll = [
-        randBetween(-125,-66),
-        randBetween(23,50)
+        randBetween(b[0][0],b[1][0]),
+        randBetween(b[0][1],b[1][1])
       ];
 
       proj = projection(ll);
 
     }
 
-
-
     return {
-      //"state": findDistrict(ll,geodata),
-      "state": bl.find(ll),
       "x": proj[0],
-      "y": proj[1]
+      "y": proj[1],
+      "ll": ll
     };
 
   });
+
+  bl.findAddress("13 Baker Street, London, UK",function(err,result){
+    console.log(err);
+    console.log(result);
+  });
+
+  var start = (new Date()).getTime();
+
+  points = points.map(function(d){
+    d.state = bl.find(d.ll);
+    return d;
+  });
+
+  console.log("Time to search (ms)",((new Date()).getTime()-start));
 
   features.selectAll("circle")
     .data(points)
@@ -129,6 +155,7 @@ d3.json("us-states-with-holes.topojson",function(error,geodata) {
       })
       .on("mouseover",function(d){
         console.log(d.state ? d.state.name : "No state");
+        console.log(d.ll);
       });
 
 });
