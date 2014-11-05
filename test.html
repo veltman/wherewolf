@@ -9,7 +9,7 @@ body {
 path {
   stroke-width: 1px;
   stroke: white;
-  fill: #999;
+  fill: #ccc;
   cursor: pointer;
 }
 
@@ -35,6 +35,7 @@ circle:hover {
 <script src="borderline.js"></script>
 <script src="d3.v3.min.js"></script>
 <script src="topojson.v1.min.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
 <script>
 
@@ -63,7 +64,7 @@ var features = svg.append("g")
 //Create zoom/pan listener
 //Change [1,Infinity] to adjust the min/max zoom scale
 var zoom = d3.behavior.zoom()
-    .scaleExtent([1, Infinity])
+    .scaleExtent([1, 10])
     .on("zoom",zoomed);
 
 svg.call(zoom);
@@ -125,11 +126,6 @@ d3.json("us-states-with-holes.geojson",function(error,geodata) {
 
   });
 
-  bl.findAddress("13 Baker Street, London, UK",function(err,result){
-    console.log(err);
-    console.log(result);
-  });
-
   var start = (new Date()).getTime();
 
   points = points.map(function(d){
@@ -138,6 +134,39 @@ d3.json("us-states-with-holes.geojson",function(error,geodata) {
   });
 
   console.log("Time to search (ms)",((new Date()).getTime()-start));
+
+  /*queue()
+    .defer(addAddress,"160 Varick St, New York, NY",bl)
+    .defer(addAddress,"59 Buena Vista Terrace, San Francisco, CA",bl)
+    .defer(addAddress,"100 Tigertail Road, Los Angeles, CA",bl)
+    .defer(addAddress,"4040 Vincent Ave S, Minneapolis, MN",bl)
+    .defer(addAddress,"Rancho Agua Caliente 6911, Pradera Dorada, 32610 Juárez, CHIH, Mexico",bl)
+    .awaitAll(function(err,locations){
+      console.log(locations.length);
+      console.log("QUEUE IS DONE");
+
+
+      features.selectAll("circle")
+        .data(locations)
+        .enter()
+        .append("circle")
+          .attr("r",3)
+          .attr("cx",function(d){
+            return projection([d.lng,d.lat])[0];
+          })
+          .attr("cy",function(d){
+            return projection([d.lng,d.lat])[1];
+          })
+          .classed("in-state",function(d){
+            return d.result;
+          })
+          .on("mouseover",function(d){
+            console.log(d.result ? d.result : "No state");
+            console.log(d.lat,d.lng);
+          });
+
+
+    });*/
 
   features.selectAll("circle")
     .data(points)
@@ -160,14 +189,26 @@ d3.json("us-states-with-holes.geojson",function(error,geodata) {
 
 });
 
+function addAddress(address,service,cb) {
+
+  service.findAddress(address,function(err,result){
+
+    cb(null,result);
+
+  });
+
+}
+
 function randBetween(a,b){
   return a+(Math.random()*(b-a));
 }
 
 //Update map on zoom/pan
 function zoomed() {
+
   features.attr("transform", "translate(" + zoom.translate() + ")scale(" + zoom.scale() + ")")
       .selectAll("path").style("stroke-width", 1 / zoom.scale() + "px" );
+
 }
 
 </script>

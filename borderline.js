@@ -1,3 +1,36 @@
+/*
+  TO DO:
+    -CHOOSE A NEW NAME
+    -Allow multiple sets
+    -BoundarySet()
+    -boundaries.add(geojson)
+    -Return dict of all matches
+    -findAddress needs to be more intuitive
+    -findAddress needs to allow an option that limits bounds you're searching in
+    -Write good tests of performance
+    -Write good, real-world examples
+    -Document things
+    -Create a shapefile smasher for topojson
+    -Turn findFeatureArray initialization into its own method
+
+    var set = BoundarySet();
+
+    set.add(new Boundless(schools),"schools");
+    set.add(new Boundless(police),"police");
+
+    {
+      "schools": {
+
+      },
+      "police": {
+
+      }
+    }
+
+    .find(latlng,"schools");
+
+*/
+
 function Boundless(collection,key) {
 
   if (collection.type) {
