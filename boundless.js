@@ -1,102 +1,41 @@
 /*
   TO DO:
     -CHOOSE A NEW NAME
-    -Allow multiple sets
-    -BoundarySet()
-    -boundaries.add(geojson)
-    -Return dict of all matches
     -findAddress needs to be more intuitive
-    -findAddress needs to allow an option that limits bounds you're searching in
     -Write good tests of performance
     -Write good, real-world examples
     -Document things
     -Create a shapefile smasher for topojson
-    -Turn findFeatureArray initialization into its own method
-
-    var set = BoundarySet();
-
-    set.add(new Boundless(schools),"schools");
-    set.add(new Boundless(police),"police");
-
-    {
-      "schools": {
-
-      },
-      "police": {
-
-      }
-    }
-
-    .find(latlng,"schools");
 
 */
 
 function Boundless(collection,key) {
 
+  this.layers = {};
+
+  return this;
+
+}
+
+Boundless.prototype.add = function(name,collection,key) {
+
+  var features;
+
   if (collection.type) {
 
     if (collection.type === "FeatureCollection") {
 
-      this.features = collection.features;
+      features = collection.features;
 
     } else if (collection.type === "Topology") {
 
-
-      if (typeof topojson !== "undefined" && topojson.feature) {
-
-        if (!collection.objects) {
-
-          //throw error
-          throw new Error("Invalid TopoJSON.");
-
-        }
-
-        if (typeof key !== "string") {
-
-          var keys = [];
-
-          for (var k in collection.objects) {
-
-            keys.push(k);
-
-          }
-
-          if (keys.length == 1) {
-
-            key = keys[0];
-
-          } else if (keys.length > 1) {
-
-            throw new Error("You supplied a topology with multiple objects: "+JSON.stringify(keys)+".  You need to specify which object to search.");
-
-          }
-
-        }
-
-        var converted = topojson.feature(collection,collection.objects[key]);
-
-        //In case it's one feature
-        if (converted.type === "Feature") {
-
-          this.features = [converted];
-
-        } else {
-
-          this.features = converted.features;
-
-        }
-
-      } else {
-
-          throw new Error("You must include the TopoJSON client library (https://github.com/mbostock/topojson) if you're using a TopoJSON file.");
-
-      }
+      features = this._convertTopo(collection,key);
 
     }
 
   } else if (Array.isArray(collection) && collection[0].type === "Feature") {
 
-    this.features = collection;
+    features = collection;
 
   } else {
 
@@ -106,14 +45,131 @@ function Boundless(collection,key) {
 
   var that = this;
 
-  this.features = this.features.map(function(f){
-    f.bbox = f.bbox || that._bounds(f);
+  features = features.map(function(f){
+    f.bbox = f.bbox || that._getBBox(f);
     return f;
   });
 
+  this.layers[name] = features;
+
   return this;
 
-}
+};
+
+Boundless.prototype._convertTopo = function(collection,key) {
+
+  var features;
+
+  if (typeof topojson === "undefined" || !topojson.feature) {
+    throw new Error("You must include the TopoJSON client library (https://github.com/mbostock/topojson) if you're using a TopoJSON file.");
+  }
+
+  if (!collection.objects) {
+
+    throw new Error("Invalid TopoJSON.");
+
+  }
+
+  if (typeof key !== "string") {
+
+    var keys = [];
+
+    for (var k in collection.objects) {
+
+      keys.push(k);
+
+    }
+
+    if (keys.length == 1) {
+
+      key = keys[0];
+
+    } else if (keys.length > 1) {
+
+      throw new Error("You supplied a topology with multiple objects: "+JSON.stringify(keys)+".  You need to specify which object to add.");
+
+    }
+
+  } else if (!(key in collection.objects)) {
+
+      throw new Error("The key '"+key+"' was not found in your TopoJSON object.");
+
+  }
+
+  var converted = topojson.feature(collection,collection.objects[key]);
+
+  //In case it's one feature
+  if (converted.type === "Feature") {
+
+    features = [converted];
+
+  } else {
+
+    features = converted.features;
+
+  }
+
+  return features;
+
+};
+
+Boundless.prototype.addAll = function(topology) {
+
+  if (topology.type && topology.type === "Topology" && topology.objects) {
+
+    for (var key in topology.objects) {
+      this.add(key,topology,key);
+    }
+
+  } else {
+
+    throw new Error(".addAll() requires a valid TopoJSON object.");
+
+  }
+
+  return this;
+
+};
+
+Boundless.prototype.bounds = function(bounds) {
+
+  if (!arguments.length) {
+    return this._bounds || null;
+  }
+
+  function validBounds(b) {
+
+    if (!Array.isArray(b) || b.length !== 2) {
+      return false;
+    }
+
+    if (!Array.isArray(b[0]) || b[0].length !== 2) {
+      return false;
+    }
+
+    if (!Array.isArray(b[1]) || b[1].length !== 2) {
+      return false;
+    }
+
+    if (b[0][0] > b[1][0] || b[0][1] > b[1][1]) {
+      return false;
+    }
+
+    return true;
+
+  }
+
+  //valid bounds
+  if (validBounds(bounds)) {
+    this._bounds = bounds;
+    delete this._googleBounds;
+  } else {
+    throw new Error("Invalid bounds received.  Must be: [[min lng,min lat],[max lng,max lat]]");
+  }
+
+  return this;
+
+};
 
 Boundless.prototype.findAddress = function(address,cb) {
 
@@ -130,15 +186,21 @@ Boundless.prototype.findAddress = function(address,cb) {
     "address": address
   };
 
-  //if (Array.isArray(this.searchBounds)) {
-  //  search.bounds = this.searchBounds = new google.maps.LatLngBounds(
-  //      new google.maps.LatLng(Math.min(this.bounds[0][1],this.bounds[1][1]),Math.min(this.bounds[0][0],this.bounds[1][0])),
-  //      new google.maps.LatLng(Math.max(this.bounds[0][1],this.bounds[1][1]),Math.max(this.bounds[0][0],this.bounds[1][0]))
-  //  );
-  //}
+  if (this._googleBounds) {
+    search.bounds = this._googleBounds;
+
+  } else if (this._bounds) {
+
+    console.log(this._bounds);
+
+    search.bounds = this._googleBounds = new google.maps.LatLngBounds(
+      new google.maps.LatLng(this._bounds[0][1],this._bounds[0][0]),
+      new google.maps.LatLng(this._bounds[1][1],this._bounds[1][0])
+    );
+
+  }
 
   var that = this;
-
 
   this.geocoder.geocode(search,function(results, status) {
 
@@ -147,40 +209,92 @@ Boundless.prototype.findAddress = function(address,cb) {
     }
 
     if (search.bounds) {
-      results = results.filter(function(d){
-        //fix this
-        return true;
+
+      results = results.filter(function(result){
+
+        var lnglat = [result.geometry.location.lng(),result.geometry.location.lat()];
+
+        return that._inBox(lnglat,that._bounds);
+
       });
+
     }
 
     if (!results.length) {
       return cb("No location found.",null);
     }
 
-    var ll = {
-      lng: results[0].geometry.location.lng(),
-      lat: results[0].geometry.location.lat()
-    };
+    var lnglat = [results[0].geometry.location.lng(),results[0].geometry.location.lat()];
 
-    cb(null,{
-      lat: ll.lat,
-      lng: ll.lng,
-      result: that.find([ll.lng,ll.lat])
-    });
+    var found = that.find(lnglat);
+
+    found._lng = lnglat[0];
+    found._lat = lnglat[1];
+
+    cb(null,found);
 
   });
 
 };
 
-Boundless.prototype.find = function(point) {
+Boundless.prototype.remove = function(layerName) {
 
-  for (var i = 0, l = this.features.length; i < l; i++) {
+  if (layerName in this.layers) {
+    delete this.layers[layerName];
+  }
 
-    if (this.inside(point,this.features[i])) {
-      return this.features[i].properties;
+  return this;
+};
+
+Boundless.prototype.layerNames = function() {
+
+  var names = [];
+
+  for (var key in this.layers) {
+    names.push(key);
+  }
+
+  return names;
+
+};
+
+Boundless.prototype.find = function(point,layerName) {
+
+  var results;
+
+  if (layerName) {
+
+    if (layerName in this.layers) {
+      return this.findLayer(point,this.layers[layerName]);
+    }
+
+    throw new Error("Layer '"+layerName+"' not found.");
+
+  } else {
+
+    results = {};
+
+    for (var key in this.layers) {
+      results[key] = this.findLayer(point,this.layers[key]);
+    }
+
+
+  }
+
+  return results;
+
+};
+
+Boundless.prototype.findLayer = function(point,layer) {
+
+  for (var i = 0, l = layer.length; i < l; i++) {
+
+    if (this.inside(point,layer[i])) {
+      return layer[i].properties;
     }
 
   }
+
   return null;
 
 };
@@ -239,7 +353,7 @@ Boundless.prototype._inBox = function(point,box) {
   return point[0] >= box[0][0] && point[0] <= box[1][0] && point[1] >= box[0][1] && point[1] <= box[1][1];
 };
 
-Boundless.prototype._bounds = function(feature) {
+Boundless.prototype._getBBox = function(feature) {
 
   //Don't check inner rings
   var outer = feature.geometry.type === "Polygon" ? [feature.geometry.coordinates[0]] : feature.geometry.coordinates.map(function(f){

@@ -32,7 +32,7 @@ circle:hover {
 
 </style>
 <body>
-<script src="borderline.js"></script>
+<script src="boundless.js"></script>
 <script src="d3.v3.min.js"></script>
 <script src="topojson.v1.min.js"></script>
 <script src="http://d3js.org/queue.v1.min.js"></script>
@@ -75,11 +75,17 @@ function firstKey(obj) {
   }
 }
 
+var bl;
+
 d3.json("us-states-with-holes.geojson",function(error,geodata) {
 
   var start = (new Date()).getTime();
 
-  var bl = new Boundless(geodata);
+  bl = new Boundless();
+
+  bl.add("states",geodata);
+
+  bl.bounds([[-126.65039062499999,30.031055426540206],[-111.8408203125,44.24519901522129]]);
 
   console.log("Time to initialize (ms)",((new Date()).getTime()-start));
 
@@ -135,16 +141,16 @@ d3.json("us-states-with-holes.geojson",function(error,geodata) {
 
   console.log("Time to search (ms)",((new Date()).getTime()-start));
 
-  /*queue()
+  queue()
     .defer(addAddress,"160 Varick St, New York, NY",bl)
     .defer(addAddress,"59 Buena Vista Terrace, San Francisco, CA",bl)
     .defer(addAddress,"100 Tigertail Road, Los Angeles, CA",bl)
     .defer(addAddress,"4040 Vincent Ave S, Minneapolis, MN",bl)
     .defer(addAddress,"Rancho Agua Caliente 6911, Pradera Dorada, 32610 Juárez, CHIH, Mexico",bl)
     .awaitAll(function(err,locations){
-      console.log(locations.length);
       console.log("QUEUE IS DONE");
 
+      locations = locations.filter(function(l){return l;});
 
       features.selectAll("circle")
         .data(locations)
@@ -152,21 +158,25 @@ d3.json("us-states-with-holes.geojson",function(error,geodata) {
         .append("circle")
           .attr("r",3)
           .attr("cx",function(d){
-            return projection([d.lng,d.lat])[0];
+            return projection([d._lng,d._lat])[0];
           })
           .attr("cy",function(d){
-            return projection([d.lng,d.lat])[1];
+            return projection([d._lng,d._lat])[1];
           })
           .classed("in-state",function(d){
-            return d.result;
+            return d;
           })
           .on("mouseover",function(d){
-            console.log(d.result ? d.result : "No state");
-            console.log(d.lat,d.lng);
+            console.log(d);
+            console.log(d._lat,d._lng);
           });
 
 
-    });*/
+      console.log(bl.bounds());
+
+    });
+
+  return true;
 
   features.selectAll("circle")
     .data(points)
