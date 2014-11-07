@@ -309,7 +309,7 @@ Boundless.prototype.inside = function(point,feature) {
     var that = this;
 
     var inRing = function(ring){
-        return that._pip(point,ring);
+      return that._pip(point,ring) && that._winding(point,ring);
     };
 
     if (feature.geometry.type === "Polygon") {
@@ -333,15 +333,20 @@ Boundless.prototype._pip = function(point, vs) {
   // implementation from substack's point-in-polygon module
   // https://www.npmjs.org/package/point-in-polygon
 
-  var x = point[0], y = point[1];
-  
-  var inside = false;
+  var x = point[0],
+      y = point[1],
+      inside = false;
+
   for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+
       var xi = vs[i][0], yi = vs[i][1];
       var xj = vs[j][0], yj = vs[j][1];
       
       var intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-      if (intersect) inside = !inside;
+      if (intersect) {
+        inside = !inside;
+      }
+
   }
   
   return inside;
@@ -384,5 +389,58 @@ Boundless.prototype._getBBox = function(feature) {
   });
 
   return bounds;
+
+};
+
+// JS implementation of the winding number algorithm
+// Based on:
+// http://www.engr.colostate.edu/~dga/dga/papers/point_in_polygon.pdf
+// and Dan Sunday's C++ implementation:
+// http://geomalgorithms.com/a03-_inclusion.html
+Boundless.prototype._winding = function(point,vs) {
+
+  //Is a line from v1 to v2 entirely left of point p, entirely right of it, or neither?
+  //A = difference in X from v1 to v2
+  //B = difference in in Y from v1 to p
+  //C = difference in X from v1 to p
+  //D = difference in Y from v1 to v2
+  //If AB > CD, it's strictly to the left of p in the direction v1->v2
+  //If AB < CD, it's strictly to the right of p in the direction v1->v2
+  function dir(v1,v2,p) {
+    return (v2[0] - v1[0]) * (p[1] - v1[1]) - (p[0] -  v1[0]) * (v2[1] - v1[1])
+  }
+
+  function isLeft(v1,v2,p) {
+      return dir(v1,v2,p) > 0;
+  }
+
+  function isRight(v1,v2,p) {
+    return dir(v1,v2,p) < 0;
+  }
+
+  var w = 0;
+
+  //Need to compare last point connecting back to first
+  if (vs[vs.length-1][0] !== vs[0][0] || vs[vs.length-1][1] !== vs[0][1]) {
+    vs = vs.slice(0);
+    vs.push(vs[0]);
+  }
+
+  //For each segment
+  for (var i = 0, l = vs.length - 1; i < l; i++) {
+
+    //Check upward
+    if (vs[i][1] <= point[1]) {
+        if (vs[i+1][1] > point[1] && isLeft(vs[i],vs[i+1],point)) {
+          w++;
+        }
+    // Check downward
+    } else if (vs[i+1][1] <= point[1] && isRight(vs[i],vs[i+1],point)) {
+        w--;
+    }
+
+  }
+
+  return w !== 0;
 
 };
