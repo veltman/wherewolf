@@ -47,6 +47,8 @@
       return f;
     });
 
+    console.log(features);
+
     this.layers[name] = features;
 
     return this;
@@ -223,12 +225,7 @@
 
       var lnglat = [results[0].geometry.location.lng(),results[0].geometry.location.lat()];
 
-      var found = that.find(lnglat);
-
-      found._lng = lnglat[0];
-      found._lat = lnglat[1];
-
-      cb(null,found);
+      cb(null,that.find(lnglat),lnglat);
 
     });
 
@@ -298,9 +295,11 @@
 
   Boundless.prototype.inside = function(point,feature) {
 
-      if (feature.bbox && !this._inBox(point,feature.bbox)) {
+      if (!feature.geometry || (feature.bbox && !this._inBox(point,feature.bbox))) {
         return false;
       }
+
+      console.log(feature.geometry.type);
 
       var that = this;
 
@@ -352,10 +351,14 @@
   Boundless.prototype._inBox = function(point,box) {
     //This doesn't work for features that cross 180 degrees longitude (e.g. Alaska)
     //TODO: Make this work for spherical math
-    return point[0] >= box[0][0] && point[0] <= box[1][0] && point[1] >= box[0][1] && point[1] <= box[1][1];
+    return box && point[0] >= box[0][0] && point[0] <= box[1][0] && point[1] >= box[0][1] && point[1] <= box[1][1];
   };
 
   Boundless.prototype._getBBox = function(feature) {
+
+    if (!feature.geometry) {
+      return false;
+    }
 
     //Don't check inner rings
     var outer = feature.geometry.type === "Polygon" ? [feature.geometry.coordinates[0]] : feature.geometry.coordinates.map(function(f){
@@ -444,6 +447,7 @@
   if (typeof define === "function" && define.amd) {
     define(bl);
   } else if (typeof module === "object" && module.exports) {
+    var topojson = require("topojson");
     module.exports = bl;
   }
 
