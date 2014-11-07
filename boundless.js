@@ -6,7 +6,8 @@
     -Write good, real-world examples
     -Document things
     -Create a shapefile smasher for topojson
-
+    -Test weird shapes
+    -Publish on NPM?
 */
 
 function Boundless(collection,key) {

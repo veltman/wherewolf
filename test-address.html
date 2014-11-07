@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 12px sans-serif;
+}
+
+path {
+  stroke-width: 1px;
+  stroke: white;
+  fill: #ccc;
+  cursor: pointer;
+}
+
+circle {
+  opacity: 0.7;
+  fill: #f0f;
+  stroke: none;
+  cursor: pointer;
+}
+
+circle.in-state {
+  fill: lawngreen;
+}
+
+circle:hover {
+  opacity: 1;
+  stroke: black;
+  stroke-width: 1px;
+}
+
+</style>
+<body>
+<script src="boundless.js"></script>
+<script src="d3.v3.min.js"></script>
+<script src="topojson.v1.min.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+<script>
+
+//Map dimensions (in pixels)
+var width = 600,
+    height = 349;
+
+//Map projection
+var projection = d3.geo.albersUsa()
+    .scale(730.3062176506113)
+    .translate([width/2,height/2]) //translate to center the map in view
+
+//Generate paths based on projection
+var path = d3.geo.path()
+    .projection(projection);
+
+//Create an SVG
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+//Group for the map features
+var features = svg.append("g")
+    .attr("class","features");
+
+//Create zoom/pan listener
+//Change [1,Infinity] to adjust the min/max zoom scale
+var zoom = d3.behavior.zoom()
+    .scaleExtent([1, 10])
+    .on("zoom",zoomed);
+
+var benchmarks = {};
+
+svg.call(zoom);
+
+benchmarks.load = now();
+
+d3.json("lower48-with-holes.geojson",function(err,geodata) {
+
+  benchmarks.load = now()-benchmarks.load;
+
+  benchmarks.initialize = now();
+
+  var bl = new Boundless();
+
+  bl.add("states",geodata);
+
+  benchmarks.initialize = now()-benchmarks.initialize;
+
+  //Create a path for each map feature in the data
+  features.selectAll("path")
+    .data(geodata.features)
+    .enter()
+    .append("path")
+    .attr("d",path);
+
+  benchmarks.search = now();
+
+  queue()
+    .defer(addAddress,"160 Varick St, New York, NY",bl)
+    .defer(addAddress,"59 Buena Vista Terrace, San Francisco, CA",bl)
+    .defer(addAddress,"100 Tigertail Road, Los Angeles, CA",bl)
+    .defer(addAddress,"1150 15th St NW, Washington, D.C. 20071",bl)
+    .defer(addAddress,"900 6th Ave SE #220, Minneapolis, MN 55414",bl)
+    .defer(addAddress,"Rancho Agua Caliente 6911, Pradera Dorada, 32610 Juárez, CHIH, Mexico",bl)
+    .awaitAll(function(err,locations){
+
+      benchmarks.search = now()-benchmarks.search;
+
+      features.selectAll("circle")
+        .data(locations)
+        .enter()
+        .append("circle")
+          .attr("r",10)
+          .attr("cx",function(d){
+            return projection([d._lng,d._lat])[0];
+          })
+          .attr("cy",function(d){
+            return projection([d._lng,d._lat])[1];
+          })
+          .classed("in-state",function(d){
+            return d.states;
+          })
+          .on("mouseover",function(d){
+            console.log(d.states ? d.states.name : "No state");
+            console.log(d._lat,d._lng);
+          });
+
+        console.log(benchmarks);
+
+    });
+
+});
+
+function addAddress(address,service,cb) {
+
+  service.findAddress(address,function(err,result){
+
+    cb(null,result);
+
+  });
+
+}
+
+//Update map on zoom/pan
+function zoomed() {
+
+  features.attr("transform", "translate(" + zoom.translate() + ")scale(" + zoom.scale() + ")")
+      .selectAll("path").style("stroke-width", 1 / zoom.scale() + "px" );
+
+}
+
+function now() {
+  return (new Date()).getTime();
+}
+
+</script>
