@@ -75,7 +75,7 @@ d3.json("us-random.geojson",function(err,points){
 
   benchmarks.load = now();
 
-  d3.json("lower48-with-holes.topojson",function(err,geodata) {
+  d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
     benchmarks.load = now()-benchmarks.load;
 
@@ -89,7 +89,7 @@ d3.json("us-random.geojson",function(err,points){
 
     //Create a path for each map feature in the data
     features.selectAll("path")
-      .data(topojson.feature(geodata,geodata.objects.lower48).features)
+      .data(geodata.features)
       .enter()
       .append("path")
       .attr("d",path);
