@@ -9,19 +9,15 @@ body {
 path {
   stroke-width: 1px;
   stroke: white;
-  fill: #ccc;
+  fill: #ddd;
   cursor: pointer;
 }
 
 circle {
   opacity: 0.7;
-  fill: #f0f;
+  fill: #666;
   stroke: none;
   cursor: pointer;
-}
-
-circle.in-state {
-  fill: lawngreen;
 }
 
 circle:hover {
@@ -30,8 +26,27 @@ circle:hover {
   stroke-width: 1px;
 }
 
+svg {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+div.container {
+  width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 </style>
 <body>
+<div class="container">
+  <div class="map"></div>
+  <div class="info"></div>
+  <div class="result">
+    <pre><code>
+    </code></pre>
+  </div>
+</div>
 <script src="boundless.js"></script>
 <script src="d3.v3.min.js"></script>
 <script src="topojson.v1.min.js"></script>
@@ -41,126 +56,123 @@ circle:hover {
 
 //Map dimensions (in pixels)
 var width = 600,
-    height = 349;
-
-//Map projection
-var projection = d3.geo.albersUsa()
-    .scale(730.3062176506113)
-    .translate([width/2,height/2]) //translate to center the map in view
-
-//Generate paths based on projection
-var path = d3.geo.path()
-    .projection(projection);
-
-//Create an SVG
-var svg = d3.select("body").append("svg")
+    height = 349,
+    projection = d3.geo.albersUsa()
+      .scale(730.3062176506113)
+      .translate([width/2,height/2]),
+    path = d3.geo.path()
+    .projection(projection),
+    svg = d3.select("div.container").append("svg")
     .attr("width", width)
-    .attr("height", height);
-
-//Group for the map features
-var features = svg.append("g")
-    .attr("class","features");
+    .attr("height", height),
+    features = svg.append("g")
+      .attr("class","features");
 
 //Create zoom/pan listener
 //Change [1,Infinity] to adjust the min/max zoom scale
-var zoom = d3.behavior.zoom()
+/*var zoom = d3.behavior.zoom()
     .scaleExtent([1, 10])
-    .on("zoom",zoomed);
+    .on("zoom",zoomed);*/
 
 var benchmarks = {};
 
-svg.call(zoom);
+//svg.call(zoom);
+benchmarks.load = now();
 
-d3.json("us-random.geojson",function(err,points){
+d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
-  benchmarks.load = now();
+  benchmarks.load = now()-benchmarks.load;
 
-  d3.json("lower48-with-holes.geojson",function(err,geodata) {
+  benchmarks.initialize = now();
 
-    benchmarks.load = now()-benchmarks.load;
+  var bl = new Boundless();
 
-    benchmarks.initialize = now();
+  bl.add("states",geodata);
 
-    var bl = new Boundless();
+  benchmarks.initialize = now()-benchmarks.initialize;
 
-    bl.add("states",geodata);
+  //Create a path for each map feature in the data
+  features.selectAll("path")
+    .data(geodata.features)
+    .enter()
+    .append("path")
+    .attr("d",path);
 
-    benchmarks.initialize = now()-benchmarks.initialize;
+  var bounds = pad(d3.geo.bounds(geodata));
 
-    //Create a path for each map feature in the data
-    features.selectAll("path")
-      .data(geodata.features)
-      .enter()
-      .append("path")
-      .attr("d",path);
+  var points = d3.range(1000).map(function(){
+    return [
+      bounds[0][0]+Math.random()*(bounds[1][0]-bounds[0][0]),
+      bounds[0][1]+Math.random()*(bounds[1][1]-bounds[0][1]),
+    ]
+  });
 
-    points = points.filter(function(p){
+  points = points.map(function(p){
 
-      return projection(p);
+    var proj = projection(p);
+    if (!proj) {
+      proj = [0,0];
+    }
 
-    });
-
-    points = points.map(function(p){
-
-      var proj = projection(p);
-
-      return {
-        "x": proj[0],
-        "y": proj[1],
-        "lat": p[1],
-        "lng": p[0]
-      };
-
-    });
-
-    benchmarks.search = now();
-
-    points = points.map(function(p){
-      var found = bl.find([p.lng,p.lat]);
-      if (found) {
-        p.state = found.states;
-      }
-
-      return p;
-    });
-
-    benchmarks.search = now()-benchmarks.search;
-
-    features.selectAll("circle")
-      .data(points)
-      .enter()
-      .append("circle")
-        .attr("r",3)
-        .attr("cx",function(d){
-          return d.x;
-        })
-        .attr("cy",function(d){
-          return d.y;
-        })
-        .classed("in-state",function(d){
-          return d.state;
-        })
-        .on("mouseover",function(d){
-          console.log(d.state ? d.state.name : "No state");
-          console.log(d.lat,d.lng);
-        });
-
-    console.log(benchmarks);
+    return {
+      "x": proj[0],
+      "y": proj[1],
+      "lat": p[1],
+      "lng": p[0]
+    };
 
   });
+
+  benchmarks.search = now();
+
+  points = points.map(function(p){
+    var found = bl.find([p.lng,p.lat]);
+    if (found) {
+      p.state = found.states;
+    }
+
+    return p;
+  });
+
+  benchmarks.search = now()-benchmarks.search;
+
+  features.selectAll("circle")
+    .data(points)
+    .enter()
+    .append("circle")
+      .attr("r",3)
+      .attr("cx",function(d){
+        return d.x;
+      })
+      .attr("cy",function(d){
+        return d.y;
+      })
+      .classed("in-state",function(d){
+        return d.state;
+      })
+      .on("mouseover",function(d){
+        console.log(d.state ? d.state.name : "No state");
+        console.log(d.lat,d.lng);
+      });
+
+  console.log(benchmarks);
 
 });
 
 //Update map on zoom/pan
-function zoomed() {
+/*function zoomed() {
 
   features.attr("transform", "translate(" + zoom.translate() + ")scale(" + zoom.scale() + ")")
       .selectAll("path").style("stroke-width", 1 / zoom.scale() + "px" );
 
-}
+}*/
 
 function now() {
   return (new Date()).getTime();
+}
+
+function pad(bounds) {
+  return bounds;
 }
 
 </script>
