@@ -44,10 +44,10 @@ By Noah Veltman and Jenny Ye
 
 Special thanks to:
 
-* WNYC
-* OpenNews
-* Substack
-* Mike Bostock
+* [WNYC](http://www.wnyc.org/)
+* [OpenNews](http://opennews.org)
+* [Substack](https://github.com/substack) for his [point-in-polygon module](https://github.com/substack/point-in-polygon)
+* [Mike Bostock](https://github.com/mbostock) for [D3](http://d3js.org/) and [TopoJSON](https://github.com/mbostock/topojson)
 
 Available under the MIT license.
 
