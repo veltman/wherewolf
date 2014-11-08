@@ -11,3 +11,7 @@ var geo = JSON.parse(fs.readFileSync("lower48-with-holes.geojson",{encoding:"utf
 bl.add("state",geo);
 
 console.log(bl.find([-75,40]));
+console.log(bl.find({
+	"lng":-75,
+	"lat":40
+}));
