@@ -47,8 +47,6 @@
       return f;
     });
 
-    console.log(features);
-
     this.layers[name] = features;
 
     return this;
@@ -190,8 +188,6 @@
 
     } else if (this._bounds) {
 
-      console.log(this._bounds);
-
       search.bounds = this._googleBounds = new google.maps.LatLngBounds(
         new google.maps.LatLng(this._bounds[0][1],this._bounds[0][0]),
         new google.maps.LatLng(this._bounds[1][1],this._bounds[1][0])
@@ -298,8 +294,6 @@
       if (!feature.geometry || (feature.bbox && !this._inBox(point,feature.bbox))) {
         return false;
       }
-
-      console.log(feature.geometry.type);
 
       var that = this;
 
@@ -443,6 +437,8 @@
     return w !== 0;
 
   };
+
+  bl.version = "1.0.0";
 
   if (typeof define === "function" && define.amd) {
     define(bl);

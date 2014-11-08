@@ -7,8 +7,8 @@ var bl = boundless();
 var bl2 = boundless();
 
 var geo = JSON.parse(fs.readFileSync("lower48-with-holes.geojson",{encoding:"utf8"}));
-var zips = JSON.parse(fs.readFileSync("zip-codes.topojson",{encoding:"utf8"}))
 
-bl.add("zips",zips);
+bl.add("state",geo);
 
 console.log(bl.find([-75,40]));
+console.log(boundless.version);
