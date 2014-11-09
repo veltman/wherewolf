@@ -1,4 +1,4 @@
-!(function(){
+(function(){
 
   var bl = function() {
 
@@ -457,7 +457,8 @@
   if (typeof define === "function" && define.amd) {
     define(bl);
   } else if (typeof module === "object" && module.exports) {
-    var topojson = require("topojson");
+    //Broken, need to fix
+    //var topojson = require("topojson");
     module.exports = bl;
   }
 

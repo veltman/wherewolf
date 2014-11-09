@@ -14,7 +14,7 @@ path {
 }
 
 circle {
-  opacity: 0.7;
+  opacity: 0.6;
   fill: #666;
   stroke: none;
   cursor: pointer;
@@ -37,70 +37,82 @@ div.container {
   margin-right: auto;
 }
 
+div.info {
+  font-weight: bold;
+  font-size: 24px;
+  padding: 12px;
+  text-align: center;
+}
+
+pre, code {
+  font-family: "Menlo", monospace;
+  white-space: pre;
+  font-size: 18px;
+}
+
+pre {
+  background-color: #eee;
+  padding: 12px;
+}
+
 </style>
 <body>
 <div class="container">
   <div class="map"></div>
   <div class="info"></div>
   <div class="result">
-    <pre><code>
-    </code></pre>
+    <pre><code>Mouse over a dot</code></pre>
   </div>
 </div>
-<script src="boundless.js"></script>
-<script src="d3.v3.min.js"></script>
 <script src="topojson.v1.min.js"></script>
+<script src="d3.v3.min.js"></script>
 <script src="http://d3js.org/queue.v1.min.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+<script src="boundless.js"></script>
 <script>
 
 //Map dimensions (in pixels)
-var width = 600,
+var benchmarks = new Benchmarks(),
+    width = 600,
     height = 349,
-    projection = d3.geo.albersUsa()
+    info = d3.select("div.info"),
+    result = d3.select("code");
+    projection = d3.geo.albers()
       .scale(730.3062176506113)
       .translate([width/2,height/2]),
     path = d3.geo.path()
     .projection(projection),
-    svg = d3.select("div.container").append("svg")
+    svg = d3.select("div.map").append("svg")
     .attr("width", width)
     .attr("height", height),
     features = svg.append("g")
-      .attr("class","features");
+      .attr("class","features"),
+    colors = ["#ff0","#0ff","#0f0","#f0f"];
 
-//Create zoom/pan listener
-//Change [1,Infinity] to adjust the min/max zoom scale
-/*var zoom = d3.behavior.zoom()
-    .scaleExtent([1, 10])
-    .on("zoom",zoomed);*/
+benchmarks.start("Extra loading time");
 
-var benchmarks = {};
+d3.json("us-states-counties.topojson",function(err,geodata) {
 
-//svg.call(zoom);
-benchmarks.load = now();
+  benchmarks.stop("Extra loading time");
 
-d3.json("lower48-with-holes.geojson",function(err,geodata) {
-
-  benchmarks.load = now()-benchmarks.load;
-
-  benchmarks.initialize = now();
+  benchmarks.start("Time to prep features for search");
 
   var bl = new Boundless();
 
-  bl.add("states",geodata);
+  bl.addAll(geodata);
 
-  benchmarks.initialize = now()-benchmarks.initialize;
+  benchmarks.stop("Time to prep features for search");
 
   //Create a path for each map feature in the data
   features.selectAll("path")
-    .data(geodata.features)
+    .data(topojson.feature(geodata,geodata.objects.state))
     .enter()
     .append("path")
     .attr("d",path);
 
-  var bounds = pad(d3.geo.bounds(geodata));
+  var bounds = pad(d3.geo.bounds(topojson.feature(geodata,geodata.objects.state)));
 
-  var points = d3.range(1000).map(function(){
+  var points = d3.range(5000).map(function(){
     return [
       bounds[0][0]+Math.random()*(bounds[1][0]-bounds[0][0]),
       bounds[0][1]+Math.random()*(bounds[1][1]-bounds[0][1]),
@@ -110,9 +122,6 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
   points = points.map(function(p){
 
     var proj = projection(p);
-    if (!proj) {
-      proj = [0,0];
-    }
 
     return {
       "x": proj[0],
@@ -123,18 +132,19 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
   });
 
-  benchmarks.search = now();
+  benchmarks.start("Time to check 5000 lat/lngs");
 
   points = points.map(function(p){
-    var found = bl.find([p.lng,p.lat]);
-    if (found) {
-      p.state = found.states;
-    }
+
+    p.found = bl.find([p.lng,p.lat]);
 
     return p;
+
   });
 
-  benchmarks.search = now()-benchmarks.search;
+  benchmarks.stop("Time to check 5000 lat/lngs");
+
+  var colorsByName = {};
 
   features.selectAll("circle")
     .data(points)
@@ -147,32 +157,75 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
       .attr("cy",function(d){
         return d.y;
       })
-      .classed("in-state",function(d){
-        return d.state;
-      })
       .on("mouseover",function(d){
-        console.log(d.state ? d.state.name : "No state");
-        console.log(d.lat,d.lng);
-      });
+        result.text(JSON.stringify(d.found,null,"  "));
+      })
+      .filter(function(d){
+        return d.found.state;
+      })
+        .style("fill",function(d){
 
-  console.log(benchmarks);
+          if (!colorsByName[d.found.state.name]) {
+            var c = colors.pop();
+            colorsByName[d.found.state.name] = c;
+            colors.unshift(c);
+          }
+
+          return colorsByName[d.found.state.name];
+
+        });
+
+
+  console.log(benchmarks.list());
 
 });
 
-//Update map on zoom/pan
-/*function zoomed() {
-
-  features.attr("transform", "translate(" + zoom.translate() + ")scale(" + zoom.scale() + ")")
-      .selectAll("path").style("stroke-width", 1 / zoom.scale() + "px" );
-
-}*/
-
 function now() {
-  return (new Date()).getTime();
+  return 
 }
 
-function pad(bounds) {
-  return bounds;
+function pad(b) {
+  var wx = (b[1][0]-b[0][0]) * 0.1,
+      hx = (b[1][1]-b[0][1]) * 0.1;
+
+  console.log([
+    [
+      b[0][0]-wx,
+      b[0][1]-hx
+    ],
+    [
+      b[1][0]+wx,
+      b[1][1]+hx
+    ]
+  ]);
+
+  return [
+    [
+      b[0][0]-wx,
+      b[0][1]-hx
+    ],
+    [
+      b[1][0]+wx,
+      b[1][1]+hx
+    ]
+  ];
+
+}
+
+function Benchmarks() {
+  var marks = {};
+
+  return {
+    "start": function(key){
+      marks[key] = (new Date()).getTime();
+    },
+    "stop": function(key){
+      marks[key] = (new Date()).getTime() - marks[key];
+    },
+    "list": function(){
+      return marks;
+    }
+  };
 }
 
 </script>
