@@ -137,7 +137,7 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
   points = points.map(function(p){
 
-    p.found = bl.find([p.lng,p.lat]);
+    p.found = bl.find([p.lng,p.lat],{returnFeature:true,layer:"state"});
 
     return p;
 
@@ -162,17 +162,29 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
         result.text(JSON.stringify(d.found,null,"  "));
       })
       .filter(function(d){
-        return d.found.state;
+        return d.found && (d.found.state || d.found.name || d.found.properties.name);
       })
         .style("fill",function(d){
+          var name;
+          if (d.found.name) {
+            name = d.found.name;
+          } else if (d.found.state) {
+            if (d.found.state.properties) {
+              name = d.found.state.properties.name;
+            } else {
+              name = d.found.state.name;
+            }
+          } else {
+            name = d.found.properties.name;
+          }
 
-          if (!colorsByName[d.found.state.name]) {
+          if (!colorsByName[name]) {
             var c = colors.pop();
-            colorsByName[d.found.state.name] = c;
+            colorsByName[name] = c;
             colors.unshift(c);
           }
 
-          return colorsByName[d.found.state.name];
+          return colorsByName[name];
 
         });
 
@@ -193,17 +205,6 @@ function now() {
 function pad(b) {
   var wx = (b[1][0]-b[0][0]) * 0.05,
       hx = (b[1][1]-b[0][1]) * 0.05;
-
-  console.log([
-    [
-      b[0][0]-wx,
-      b[0][1]-hx
-    ],
-    [
-      b[1][0]+wx,
-      b[1][1]+hx
-    ]
-  ]);
 
   return [
     [

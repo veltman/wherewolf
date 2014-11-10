@@ -101,9 +101,11 @@
 
   };
 
-  Boundless.prototype.find = function(point,layerName) {
+  Boundless.prototype.find = function(point,options) {
 
     var results;
+
+    options = options || {};
 
     //if they supplied an object with lat and lng, that's OK
     if (point.lat && point.lng) {
@@ -112,10 +114,10 @@
       throw new Error("Invalid point.  Latitude/longitude required.");
     }
 
-    if (layerName) {
+    if (options.layer) {
 
-      if (layerName in this.layers) {
-        return _findLayer(point,this.layers[layerName]);
+      if (options.layer in this.layers) {
+        return _findLayer(point,this.layers[options.layer],!!options.returnFeature);
       }
 
       throw new Error("Layer '"+layerName+"' not found.");
@@ -125,9 +127,8 @@
       results = {};
 
       for (var key in this.layers) {
-        results[key] = _findLayer(point,this.layers[key]);
+        results[key] = _findLayer(point,this.layers[key],!!options.returnFeature);
       }
-
 
     }
 
@@ -158,7 +159,27 @@
 
   };
 
-  function _findAddress(address,cb) {
+  function _findAddress(address,a,b) {
+
+    var options,
+        cb;
+
+    //All these are allowed:
+    //findAddress("address",callback,{options})
+    //findAddress("address",{options},callback)
+    //findAddress("address",callback)
+    if (arguments.length === 3) {
+      if (typeof a === "function") {
+        cb = a;
+        options = b;
+      } else {
+        options = a;
+        cb = b;
+      }
+    } else if (arguments.length === 2) {
+      cb = a;
+      options = {};
+    }
 
     //throw an error if google not available
     if (!this.geocoder) {
@@ -211,7 +232,7 @@
 
       var lnglat = [results[0].geometry.location.lng(),results[0].geometry.location.lat()];
 
-      cb(null,that.find(lnglat),{
+      cb(null,that.find(lnglat,options),{
         "lng": lnglat[0],
         "lat": lnglat[1]
       });
@@ -220,12 +241,12 @@
 
   };
 
-  function _findLayer(point,layer) {
+  function _findLayer(point,layer,returnFeature) {
 
     for (var i = 0, l = layer.length; i < l; i++) {
 
       if (_inside(point,layer[i])) {
-        return layer[i].properties;
+        return returnFeature ? layer[i] : layer[i].properties;
       }
 
     }
