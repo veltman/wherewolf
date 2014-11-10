@@ -8,8 +8,8 @@ body {
 
 path {
   stroke-width: 1px;
-  stroke: white;
-  fill: #ddd;
+  stroke: #999;
+  fill: none;
   cursor: pointer;
 }
 
@@ -38,10 +38,8 @@ div.container {
 }
 
 div.info {
-  font-weight: bold;
-  font-size: 24px;
-  padding: 12px;
-  text-align: center;
+  font-size: 16px;
+  padding: 12px 0;
 }
 
 pre, code {
@@ -53,6 +51,7 @@ pre, code {
 pre {
   background-color: #eee;
   padding: 12px;
+  margin: 0;
 }
 
 </style>
@@ -91,7 +90,7 @@ var benchmarks = new Benchmarks(),
 
 benchmarks.start("Extra loading time");
 
-d3.json("us-states-counties.topojson",function(err,geodata) {
+d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
   benchmarks.stop("Extra loading time");
 
@@ -99,20 +98,22 @@ d3.json("us-states-counties.topojson",function(err,geodata) {
 
   var bl = new Boundless();
 
-  bl.addAll(geodata);
+  bl.add("state",geodata);
 
   benchmarks.stop("Time to prep features for search");
 
+  var bg = geodata.type == "Topology" ? topojson.feature(geodata,geodata.objects.state) : geodata;
+
   //Create a path for each map feature in the data
   features.selectAll("path")
-    .data(topojson.feature(geodata,geodata.objects.state))
+    .data(bg.features)
     .enter()
     .append("path")
     .attr("d",path);
 
-  var bounds = pad(d3.geo.bounds(topojson.feature(geodata,geodata.objects.state)));
+  var bounds = pad(d3.geo.bounds(bg));
 
-  var points = d3.range(5000).map(function(){
+  var points = d3.range(2000).map(function(){
     return [
       bounds[0][0]+Math.random()*(bounds[1][0]-bounds[0][0]),
       bounds[0][1]+Math.random()*(bounds[1][1]-bounds[0][1]),
@@ -132,7 +133,7 @@ d3.json("us-states-counties.topojson",function(err,geodata) {
 
   });
 
-  benchmarks.start("Time to check 5000 lat/lngs");
+  benchmarks.start("Time to check 2000 lat/lngs");
 
   points = points.map(function(p){
 
@@ -142,7 +143,7 @@ d3.json("us-states-counties.topojson",function(err,geodata) {
 
   });
 
-  benchmarks.stop("Time to check 5000 lat/lngs");
+  benchmarks.stop("Time to check 2000 lat/lngs");
 
   var colorsByName = {};
 
@@ -175,8 +176,13 @@ d3.json("us-states-counties.topojson",function(err,geodata) {
 
         });
 
-
-  console.log(benchmarks.list());
+  info.selectAll("div")
+    .data(d3.entries(benchmarks.list()))
+    .enter()
+    .append("div")
+      .html(function(d){
+        return "<strong>"+d.key+": </strong> "+d.value+"ms";
+      });
 
 });
 
@@ -185,8 +191,8 @@ function now() {
 }
 
 function pad(b) {
-  var wx = (b[1][0]-b[0][0]) * 0.1,
-      hx = (b[1][1]-b[0][1]) * 0.1;
+  var wx = (b[1][0]-b[0][0]) * 0.05,
+      hx = (b[1][1]-b[0][1]) * 0.05;
 
   console.log([
     [

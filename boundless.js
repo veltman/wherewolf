@@ -1,5 +1,14 @@
 (function(){
 
+  var tj,
+      npm = typeof module === "object" && module.exports;
+
+  if (npm) {
+     tj = require("topojson");
+  } else if (typeof topojson !== "undefined" && "feature" in topojson) {
+    tj = topojson;
+  }
+
   var bl = function() {
 
     return new Boundless();
@@ -126,6 +135,11 @@
 
   };
 
+  //findAddress is client-side only for now
+  if (!npm) {
+    Boundless.prototype.findAddress = _findAddress;
+  }
+
   Boundless.prototype.bounds = function(bounds) {
 
     if (!arguments.length) {
@@ -144,7 +158,7 @@
 
   };
 
-  Boundless.prototype.findAddress = function(address,cb) {
+  function _findAddress(address,cb) {
 
     //throw an error if google not available
     if (!this.geocoder) {
@@ -197,7 +211,10 @@
 
       var lnglat = [results[0].geometry.location.lng(),results[0].geometry.location.lat()];
 
-      cb(null,that.find(lnglat),lnglat);
+      cb(null,that.find(lnglat),{
+        "lng": lnglat[0],
+        "lat": lnglat[1]
+      });
 
     });
 
@@ -248,7 +265,7 @@
 
     var features;
 
-    if (typeof topojson === "undefined" || !topojson.feature) {
+    if (!tj) {
       throw new Error("You must include the TopoJSON client library (https://github.com/mbostock/topojson) if you're using a TopoJSON file.");
     }
 
@@ -284,7 +301,7 @@
 
     }
 
-    var converted = topojson.feature(collection,collection.objects[key]);
+    var converted = tj.feature(collection,collection.objects[key]);
 
     //In case it's one feature
     if (converted.type === "Feature") {
@@ -456,9 +473,7 @@
 
   if (typeof define === "function" && define.amd) {
     define(bl);
-  } else if (typeof module === "object" && module.exports) {
-    //Broken, need to fix
-    //var topojson = require("topojson");
+  } else if (npm) {
     module.exports = bl;
   }
 

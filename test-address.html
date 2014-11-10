@@ -8,20 +8,16 @@ body {
 
 path {
   stroke-width: 1px;
-  stroke: white;
-  fill: #ccc;
+  stroke: #999;
+  fill: none;
   cursor: pointer;
 }
 
 circle {
-  opacity: 0.7;
-  fill: #f0f;
+  opacity: 0.6;
+  fill: #666;
   stroke: none;
   cursor: pointer;
-}
-
-circle.in-state {
-  fill: lawngreen;
 }
 
 circle:hover {
@@ -30,80 +26,128 @@ circle:hover {
   stroke-width: 1px;
 }
 
+svg {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+div.container {
+  width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+div.info {
+  font-size: 16px;
+  padding: 12px 0;
+}
+
+pre, code {
+  font-family: "Menlo", monospace;
+  white-space: pre;
+  font-size: 18px;
+}
+
+pre {
+  background-color: #eee;
+  padding: 12px;
+  margin: 0;
+}
+
 </style>
 <body>
-<script src="boundless.js"></script>
-<script src="d3.v3.min.js"></script>
+<div class="container">
+  <div class="map"></div>
+  <div class="info"></div>
+  <div class="result">
+    <pre><code>Mouse over a dot</code></pre>
+  </div>
+</div>
 <script src="topojson.v1.min.js"></script>
+<script src="d3.v3.min.js"></script>
 <script src="http://d3js.org/queue.v1.min.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+<script src="boundless.js"></script>
 <script>
 
 //Map dimensions (in pixels)
-var width = 600,
-    height = 349;
-
-//Map projection
-var projection = d3.geo.albersUsa()
-    .scale(730.3062176506113)
-    .translate([width/2,height/2]) //translate to center the map in view
-
-//Generate paths based on projection
-var path = d3.geo.path()
-    .projection(projection);
-
-//Create an SVG
-var svg = d3.select("body").append("svg")
+var benchmarks = new Benchmarks(),
+    width = 600,
+    height = 349,
+    info = d3.select("div.info"),
+    result = d3.select("code");
+    projection = d3.geo.albers()
+      .scale(730.3062176506113)
+      .translate([width/2,height/2]),
+    path = d3.geo.path()
+      .projection(projection),
+    svg = d3.select("div.map").append("svg")
     .attr("width", width)
-    .attr("height", height);
+    .attr("height", height),
+    features = svg.append("g")
+      .attr("class","features"),
+    colors = ["#ff0","#0ff","#0f0","#f0f"];
 
-//Group for the map features
-var features = svg.append("g")
-    .attr("class","features");
-
-//Create zoom/pan listener
-//Change [1,Infinity] to adjust the min/max zoom scale
-var zoom = d3.behavior.zoom()
-    .scaleExtent([1, 10])
-    .on("zoom",zoomed);
-
-var benchmarks = {};
-
-svg.call(zoom);
-
-benchmarks.load = now();
+benchmarks.start("Extra loading time");
 
 d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
-  benchmarks.load = now()-benchmarks.load;
+  benchmarks.stop("Extra loading time");
 
-  benchmarks.initialize = now();
+  benchmarks.start("Time to prep features for search");
 
   var bl = new Boundless();
 
-  bl.add("states",geodata);
+  bl.add("state",geodata);
 
-  benchmarks.initialize = now()-benchmarks.initialize;
+  benchmarks.stop("Time to prep features for search");
+
+  var bg = geodata.type == "Topology" ? topojson.feature(geodata,geodata.objects.state) : geodata;
 
   //Create a path for each map feature in the data
   features.selectAll("path")
-    .data(geodata.features)
+    .data(bg.features)
     .enter()
     .append("path")
     .attr("d",path);
 
-  benchmarks.search = now();
+  var bounds = pad(d3.geo.bounds(bg));
+
+  var points = d3.range(2000).map(function(){
+    return [
+      bounds[0][0]+Math.random()*(bounds[1][0]-bounds[0][0]),
+      bounds[0][1]+Math.random()*(bounds[1][1]-bounds[0][1]),
+    ]
+  });
+
+  points = points.map(function(p){
+
+    var proj = projection(p);
+
+    return {
+      "x": proj[0],
+      "y": proj[1],
+      "lat": p[1],
+      "lng": p[0]
+    };
+
+  });
+
+  benchmarks.start("Time to check 5 addresses");
+
+  var colorsByName = {};
 
   queue()
     .defer(addAddress,"160 Varick St, New York, NY",bl)
-    .defer(addAddress,"59 Buena Vista Terrace, San Francisco, CA",bl)
     .defer(addAddress,"100 Tigertail Road, Los Angeles, CA",bl)
     .defer(addAddress,"1150 15th St NW, Washington, D.C. 20071",bl)
     .defer(addAddress,"900 6th Ave SE #220, Minneapolis, MN 55414",bl)
     .defer(addAddress,"Rancho Agua Caliente 6911, Pradera Dorada, 32610 Juárez, CHIH, Mexico",bl)
     .awaitAll(function(err,locations){
 
-      benchmarks.search = now()-benchmarks.search;
+      benchmarks.stop("Time to check 5 addresses");
+
+      console.log(locations);
 
       features.selectAll("circle")
         .data(locations)
@@ -111,45 +155,100 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
         .append("circle")
           .attr("r",10)
           .attr("cx",function(d){
-            return projection([d._lng,d._lat])[0];
+            console.log([d.latlng.lng,d.latlng.lat]);
+            return projection([d.latlng.lng,d.latlng.lat])[0];
           })
           .attr("cy",function(d){
-            return projection([d._lng,d._lat])[1];
-          })
-          .classed("in-state",function(d){
-            return d.states;
+            return projection([d.latlng.lng,d.latlng.lat])[1];
           })
           .on("mouseover",function(d){
-            console.log(d.states ? d.states.name : "No state");
-            console.log(d._lat,d._lng);
+            result.text(JSON.stringify(d,null,"  "));
+          })
+          .filter(function(d){
+            return d.result.state;
+          })
+            .style("fill",function(d){
+
+              if (!colorsByName[d.result.state.name]) {
+                var c = colors.pop();
+                colorsByName[d.result.state.name] = c;
+                colors.unshift(c);
+              }
+
+              return colorsByName[d.result.state.name];
+
+            });
+
+      info.selectAll("div")
+        .data(d3.entries(benchmarks.list()))
+        .enter()
+        .append("div")
+          .html(function(d){
+            return "<strong>"+d.key+": </strong> "+d.value+"ms";
           });
 
-        console.log(benchmarks);
-
     });
+
 
 });
 
 function addAddress(address,service,cb) {
 
-  service.findAddress(address,function(err,result){
+  service.findAddress(address,function(err,result,ll){
 
-    cb(null,result);
+    console.log(result,ll);
+
+    cb(null,{
+      "result": result,
+      "latlng": ll
+    });
 
   });
 
 }
 
-//Update map on zoom/pan
-function zoomed() {
+function pad(b) {
+  var wx = (b[1][0]-b[0][0]) * 0.05,
+      hx = (b[1][1]-b[0][1]) * 0.05;
 
-  features.attr("transform", "translate(" + zoom.translate() + ")scale(" + zoom.scale() + ")")
-      .selectAll("path").style("stroke-width", 1 / zoom.scale() + "px" );
+  console.log([
+    [
+      b[0][0]-wx,
+      b[0][1]-hx
+    ],
+    [
+      b[1][0]+wx,
+      b[1][1]+hx
+    ]
+  ]);
+
+  return [
+    [
+      b[0][0]-wx,
+      b[0][1]-hx
+    ],
+    [
+      b[1][0]+wx,
+      b[1][1]+hx
+    ]
+  ];
 
 }
 
-function now() {
-  return (new Date()).getTime();
+function Benchmarks() {
+  var marks = {};
+
+  return {
+    "start": function(key){
+      marks[key] = (new Date()).getTime();
+    },
+    "stop": function(key){
+      marks[key] = (new Date()).getTime() - marks[key];
+    },
+    "list": function(){
+      return marks;
+    }
+  };
 }
 
 </script>
