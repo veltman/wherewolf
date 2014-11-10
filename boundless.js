@@ -117,7 +117,7 @@
     if (options.layer) {
 
       if (options.layer in this.layers) {
-        return _findLayer(point,this.layers[options.layer],!!options.returnFeature);
+        return _findLayer(point,this.layers[options.layer],!!options.wholeFeature);
       }
 
       throw new Error("Layer '"+layerName+"' not found.");
@@ -127,7 +127,7 @@
       results = {};
 
       for (var key in this.layers) {
-        results[key] = _findLayer(point,this.layers[key],!!options.returnFeature);
+        results[key] = _findLayer(point,this.layers[key],!!options.wholeFeature);
       }
 
     }
