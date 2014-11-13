@@ -1,22 +1,27 @@
-/* TO DO: Rename */
-
 (function(){
 
+  //Namespace for TopoJSON
+  //Is this a node module?
   var tj,
       npm = typeof module === "object" && module.exports;
 
+  //If it's a node module, require topojson
   if (npm) {
      tj = require("topojson");
+  //Otherwise, if topojson exists, save the reference
   } else if (typeof topojson !== "undefined" && "feature" in topojson) {
     tj = topojson;
   }
 
+  //Factory function
   var ww = function() {
 
     return new Wherewolf();
 
   };
 
+  //Basic class
+  //Start with empty layers
   var Wherewolf = function() {
 
     this.layers = {};
@@ -25,53 +30,67 @@
 
   };
 
+  //Add a layer
   Wherewolf.prototype.add = function(name,collection,key) {
 
     var features;
 
+    //If it has a 'type' property
+    //Check for a FeatureCollection or Topology
     if (collection.type) {
 
+      //Check for a FeatureCollection
       if (collection.type === "FeatureCollection") {
 
         features = collection.features;
 
+      //If it's a Topology, convert to a FeatureCollection
       } else if (collection.type === "Topology") {
 
         features = _convertTopo(collection,key);
 
       }
 
+    //If it's an array
+    //Check for an array of features
     } else if (Array.isArray(collection) && collection[0].type === "Feature") {
 
       features = collection;
 
+    //Not valid
     } else {
 
       throw new Error("No valid GeoJSON or TopoJSON supplied.");
 
     }
 
-    var that = this;
-
+    //Get bounding box for each feature
+    //If bbox already exists, use that
     features = features.map(function(f){
       f.bbox = f.bbox || _getBBox(f);
       return f;
     });
 
+    //Save features array as a layer
     this.layers[name] = features;
 
     return this;
 
   };
 
+  //Add all objects from a Topology as layers
   Wherewolf.prototype.addAll = function(topology) {
 
+    //Check for valid Topology
     if (topology.type && topology.type === "Topology" && topology.objects) {
 
+      //For each object in it, add that layer
+      //Use the object key as the layer name
       for (var key in topology.objects) {
         this.add(key,topology,key);
       }
 
+    //Invalid Topology
     } else {
 
       throw new Error(".addAll() requires a valid TopoJSON object.");
@@ -82,6 +101,7 @@
 
   };
 
+  //Remove a layer by name
   Wherewolf.prototype.remove = function(layerName) {
 
     if (layerName in this.layers) {
@@ -91,6 +111,7 @@
     return this;
   };
 
+  //Returns an array of current layer names
   Wherewolf.prototype.layerNames = function() {
 
     var names = [];
@@ -103,19 +124,27 @@
 
   };
 
+  //Find a point, with options
+  //Possible options are:
+  //  'layer': get one specific layer name (default: all layers)
+  //  'wholeFeature': return the feature itself (default: just its properties)
   Wherewolf.prototype.find = function(point,options) {
 
     var results;
 
+    //Defaults
     options = options || {};
 
     //if they supplied an object with lat and lng, that's OK
+    //{lng: 45, lat: 45} instead of [45,45]
     if (point.lat && point.lng) {
       return this.find([point.lng,point.lat],options);
+    //Check for a valid point
     } else if (!Array.isArray(point) || point.length !== 2 || !_isNumber(point[0]) || !_isNumber(point[1])) {
       throw new Error("Invalid point.  Latitude/longitude required.");
     }
 
+    //If they want a specific layer, return that result
     if (options.layer) {
 
       if (options.layer in this.layers) {
@@ -124,6 +153,7 @@
 
       throw new Error("Layer '"+layerName+"' not found.");
 
+    //Return an object with the result for each layer
     } else {
 
       results = {};
@@ -143,15 +173,19 @@
     Wherewolf.prototype.findAddress = _findAddress;
   }
 
+  //Get or set the search bounds for findAddress
   Wherewolf.prototype.bounds = function(bounds) {
 
+    //If no arguments, get existing bounds
     if (!arguments.length) {
       return this._bounds || null;
     }
 
-    //valid bounds
+    //Check that bounds is valid
     if (_validBounds(bounds)) {
+      //Set the bounds
       this._bounds = bounds;
+      //Clear cached google bounds
       delete this._googleBounds;
     } else {
       throw new Error("Invalid bounds received.  Must be: [[min lng,min lat],[max lng,max lat]]");
@@ -161,6 +195,7 @@
 
   };
 
+  //Find an address
   function _findAddress(address,a,b) {
 
     var options,
@@ -183,8 +218,8 @@
       options = {};
     }
 
-    //throw an error if google not available
     if (!this.geocoder) {
+      //Try to initialize google geocoder
       try {
         this.geocoder = new google.maps.Geocoder();
       } catch (e) {
@@ -192,10 +227,12 @@
       }
     }
 
+    //Format search parameters for google geocoder
     var search = {
       "address": address
     };
 
+    //Use cached google bounds, or create it
     if (this._googleBounds) {
       search.bounds = this._googleBounds;
 
@@ -210,12 +247,15 @@
 
     var that = this;
 
+    //Do geocoding
     this.geocoder.geocode(search,function(results, status) {
 
+      //If google error, return that
       if (status != google.maps.GeocoderStatus.OK) {
         return cb(status,null);
       }
 
+      //If search bounds, filter results on those bounds
       if (search.bounds) {
 
         results = results.filter(function(result){
@@ -228,12 +268,15 @@
 
       }
 
+      //If no results, return that
       if (!results.length) {
         return cb("No location found.",null);
       }
 
       var lnglat = [results[0].geometry.location.lng(),results[0].geometry.location.lat()];
 
+      //Do .find() on the point, passing options
+      //Return {lng: x, lat: y} as a third argument
       cb(null,that.find(lnglat,options),{
         "lng": lnglat[0],
         "lat": lnglat[1]
@@ -243,37 +286,49 @@
 
   };
 
-  function _findLayer(point,layer,returnFeature) {
+  //Find a point in a specific layer
+  function _findLayer(point,layer,wholeFeature) {
 
+    //Check each feature in the layer
     for (var i = 0, l = layer.length; i < l; i++) {
 
+      //If the point is inside this feature,
+      //return its properties or the feature itself
       if (_inside(point,layer[i])) {
-        return returnFeature ? layer[i] : layer[i].properties;
+        return wholeFeature ? layer[i] : layer[i].properties;
       }
 
     }
 
+    //No match, return null
     return null;
 
   }
 
+  //Check whether a point is inside a GeoJSON feature
   function _inside(point,feature) {
 
+      //If feature is invalid or the point is outside
+      //the feature bbox, return false
       if (!feature.geometry || (feature.bbox && !_inBox(point,feature.bbox))) {
         return false;
       }
 
-      var that = this;
-
+      //Is the point in a given ring
       var inRing = function(ring){
         return _pip(point,ring);
-        //return _pip(point,ring) && _winding(point,ring);
       };
 
+      //If it's a polygon, return true if
+      //point is in the first ring AND not
+      //in any other rings (holes)
       if (feature.geometry.type === "Polygon") {
         return inRing(feature.geometry.coordinates[0]) && !feature.geometry.coordinates.slice(1).some(inRing);
       }
 
+      //Otherwise assume it's a MultiPolygon
+      //Return true if it's in any of the
+      //constituent polygons
       for (var i = 0, l = feature.geometry.coordinates.length; i < l; i++) {
         if (inRing(feature.geometry.coordinates[i][0]) && !feature.geometry.coordinates[i].slice(1).some(inRing)) {
           return true;
@@ -284,20 +339,26 @@
 
   }
 
+  //Convert a Topology object to a FeatureCollection
   function _convertTopo(collection,key) {
 
     var features;
 
+    //Check that topojson exists
     if (!tj) {
       throw new Error("You must include the TopoJSON client library (https://github.com/mbostock/topojson) if you're using a TopoJSON file.");
     }
 
+    //If it has no objects, it's invalid
     if (!collection.objects) {
 
       throw new Error("Invalid TopoJSON.");
 
     }
 
+    //If no key supplied...
+    //If only one object, use that
+    //If multiple objects, throw an error
     if (typeof key !== "string") {
 
       var keys = [];
@@ -314,19 +375,21 @@
 
       } else if (keys.length > 1) {
 
-        throw new Error("You supplied a topology with multiple objects: "+JSON.stringify(keys)+".  You need to specify which object to add.");
+        throw new Error("You supplied a topology with multiple objects: "+JSON.stringify(keys)+".  Specify an object to add, or use .addAll().");
 
       }
 
+    //Check that the key exists
     } else if (!(key in collection.objects)) {
 
         throw new Error("The key '"+key+"' was not found in your TopoJSON object.");
 
     }
 
+    //Get the FeatureCollection from the object named 'key'
     var converted = tj.feature(collection,collection.objects[key]);
 
-    //In case it's one feature
+    //If it returns a single Feature, turn that into an array
     if (converted.type === "Feature") {
 
       features = [converted];
@@ -341,6 +404,7 @@
 
   }
 
+  //Is a bounding box valid?
   function _validBounds(b) {
 
     if (!Array.isArray(b) || b.length !== 2) {
@@ -363,14 +427,18 @@
 
   }
 
+  //Is a point in the box [[xmin,ymin],[xmax,ymax]]
+  //This gets goofy with features that cross the antimeridian (e.g. Alaska)
+  //TODO: Make this work for spherical math
   function _inBox(point,box) {
-    //This doesn't work for features that cross 180 degrees longitude (e.g. Alaska)
-    //TODO: Make this work for spherical math
     return box && point[0] >= box[0][0] && point[0] <= box[1][0] && point[1] >= box[0][1] && point[1] <= box[1][1];
   }
 
+  //Get the bounding box [[xmin,ymin],[xmax,ymax]]
+  //of a GeoJSON Polygon or MultiPolygon
   function _getBBox(feature) {
 
+    //Not valid
     if (!feature.geometry) {
       return false;
     }
@@ -406,17 +474,16 @@
 
   }
 
+  //Check whether a number is a number
   function _isNumber(num){
     return toString.call(num) === '[object Number]' && !isNaN(num);
   }
 
-
+  //ray-casting algorithm based on
+  //http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+  //implementation from substack's point-in-polygon module
+  //https://www.npmjs.org/package/point-in-polygon
   function _pip(point, vs) {
-
-    // ray-casting algorithm based on
-    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
-    // implementation from substack's point-in-polygon module
-    // https://www.npmjs.org/package/point-in-polygon
 
     var x = point[0],
         y = point[1],
@@ -439,11 +506,11 @@
   }
 
 
-  // JS implementation of the winding number algorithm
-  // Based on:
-  // http://www.engr.colostate.edu/~dga/dga/papers/point_in_polygon.pdf
-  // and Dan Sunday's C++ implementation:
-  // http://geomalgorithms.com/a03-_inclusion.html
+  //JS implementation of the winding number algorithm
+  //Based on:
+  //http://www.engr.colostate.edu/~dga/dga/papers/point_in_polygon.pdf
+  //and Dan Sunday's C++ implementation:
+  //http://geomalgorithms.com/a03-_inclusion.html
   function _winding(point,vs) {
 
     //Is a line from v1 to v2 entirely left of point p, entirely right of it, or neither?
@@ -492,14 +559,18 @@
 
   }
 
+  //Set a version number
   ww.version = "1.0.0";
 
+  //If it's being included as an AMD module, define() it
   if (typeof define === "function" && define.amd) {
     define(ww);
+  //If it's a node module, export it
   } else if (npm) {
     module.exports = ww;
   }
 
+  //Add as global
   this.Wherewolf = ww;
 
 })();

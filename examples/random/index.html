@@ -12,6 +12,8 @@
 <script src="//d3js.org/topojson.v1.min.js"></script>
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script src="//d3js.org/queue.v1.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="http://project.wnyc.org/assets/js/jquery.url.min.js"></script>
 <script src="../../wherewolf.js"></script>
 <script>
 
@@ -31,7 +33,16 @@ var benchmarks = new Benchmarks(),
     .attr("height", height),
     features = svg.append("g")
       .attr("class","features"),
-    colors = ["#ff0","#0ff","#0f0","#f0f"];
+    colors = ["#ff0","#0ff","#0f0","#f0f"],
+    options = {};
+
+if ($.url.param("wholeFeature")) {
+  options.wholeFeature = true;
+}
+
+if ($.url.param("layer")) {
+  options.layer = $.url.param("layer");
+}
 
 benchmarks.start("Extra loading time");
 
@@ -82,7 +93,7 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
   points = points.map(function(p){
 
-    p.found = ww.find([p.lng,p.lat],{wholeFeature:true,layer:"state"});
+    p.found = ww.find([p.lng,p.lat],options);
 
     return p;
 
@@ -107,7 +118,15 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
         result.text(JSON.stringify(d.found,null,"  "));
       })
       .filter(function(d){
-        return d.found && (d.found.state || d.found.name || d.found.properties.name);
+        return d.found && (
+          //layer is not set
+          (d.found.state && 
+            //wholeFeature=true          wholeFeature=false
+            (d.found.state.properties || d.found.state.name)) ||
+          //layer="state"
+          //wholeFeature=true    wholeFeature=false
+          (d.found.properties || d.found.name)
+        );
       })
         .style("fill",function(d){
           var name;
