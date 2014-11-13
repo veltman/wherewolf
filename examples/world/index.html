@@ -11,14 +11,14 @@
 <script src="../../wherewolf.js"></script>
 <script>
 
-   var options = {center:{lat:40.8,lng:-73.9},zoom: 10},
+   var options = {center:{lat:39.8,lng:-98},zoom: 2},
        map = new google.maps.Map(document.getElementById("map"),options),
        marker = new google.maps.Marker();
 
   $.getJSON("timezones.geojson",function(data){
 
     var ww = Wherewolf();
-        ww.add("Time Zone",data, "Time Zone");
+        ww.add("Time Zone",data);
 
     $("input").on("change",function(){
 
@@ -31,7 +31,7 @@
         }
 
         map.setCenter(ll || options.center);
-        map.setZoom(ll ? 15 : options.zoom);
+        map.setZoom(ll ? 6 : options.zoom);
 
         if (ll) {
           marker.setMap(map);
