@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="style.css" type="text/css" />
+<body>
+<div id="map"></div>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="../../wherewolf.js"></script>
+<script>
+
+  var outer = 400,
+      margin = 20,
+      inner = 400 - (margin*2),
+      projection = d3.geo.mercator()
+      .scale(57.25)
+      .translate([inner/2,inner/2]),
+      path = d3.geo.path()
+        .projection(projection),
+      svg = d3.select("div#map").append("svg")
+        .attr("width", outer)
+        .attr("height", outer)
+          .append("g")
+            .attr("transform","translate("+margin+","+margin+")"),
+      land = svg.append("g")
+        .attr("class","land"),
+      features = svg.append("g")
+        .attr("class","features"),
+      highlighted = svg.append("g")
+        .attr("class","timezone")
+          .append("path");
+
+  d3.json("land.topojson",function(data){
+    land.append("path")
+        .attr("d",path(topojson.feature(data,data.objects.land).features[0]));
+  });
+
+  d3.json("timezones.topojson",function(data){
+
+    var ww = Wherewolf();
+    ww.add("timezones",data);
+
+    var lng = svg.append("line");
+    var lat = svg.append("line");
+
+    lat.attr("x1",0)
+       .attr("x2",inner)
+       .attr("y1",0)
+       .attr("y2",0);
+
+    lng.attr("x1",0)
+       .attr("x2",0)
+       .attr("y1",0)
+       .attr("y2",inner);
+
+    startTransition(lat,"y",Math.random()*2000+2000,Math.random()*1000,inner);
+    startTransition(lng,"x",Math.random()*2000+2000,Math.random()*1000,inner);
+
+    var update = {
+      lng: -180,
+      lat: 80,
+      x: function(fraction) {
+        this.lng = -180+(360*fraction);
+        this.find();
+      },
+      y: function(fraction) {
+        this.lat = 90 - (180*fraction);
+        this.find();
+      },
+      find: function(){
+        highlighted
+          .attr("d",path(ww.find([this.lng,this.lat],{layer:"timezones",wholeFeature:true})));
+      }
+    };
+    function update(axis,fraction) {
+      if (axis == "x") {
+        coords
+      }
+      x = -180+(360*fraction);
+    }
+
+    function startTransition(line,axis,duration,delay,result){
+
+      var tween;
+
+      if (result) {
+        tween = function(t){
+          update[axis](t);
+          return t*inner;
+        };
+      } else {
+        tween = function(t){
+          update[axis](1-t);
+          return (1-t)*inner;
+        };
+      }
+
+      line.transition()
+        .ease("linear")
+        .delay(delay || 0)
+        .duration(duration)
+        .attrTween(axis+"1",function(){
+          return tween;
+        })
+        .attrTween(axis+"2",function(){
+          return tween;
+        })
+        .each("end",function(){
+          startTransition(d3.select(this),axis,duration,0,result ? 0 : inner);
+        });
+
+    }
+
+    /*.duration(dur)
+          .style("fill",colors.all)
+    var found = ww.find([lng,lat],{
+      layer:"timezones",
+      wholeFeature:true
+    });*/
+
+    //console.log(found);
+
+  });
+
+</script>

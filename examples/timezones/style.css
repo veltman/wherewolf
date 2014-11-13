@@ -30,8 +30,18 @@ input {
   text-align: center;
 }
 
-#map {
-  height: 250px;
+svg {
+  border: 1px solid black;
+}
+
+g.land path {
+  fill: #b8dee6;
+  stroke: none;
+}
+
+line {
+  stroke-width: 1px;
+  stroke: #f0f;
 }
 
 strong {
