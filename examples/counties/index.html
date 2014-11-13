@@ -107,7 +107,7 @@ d3.json("us-counties.geojson",function(err,geodata) {
     .data(points)
     .enter()
     .append("circle")
-      .attr("r",3)
+      .attr("r",1)
       .attr("cx",function(d){
         return d.x;
       })
