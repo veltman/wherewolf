@@ -54,7 +54,7 @@ if ($.url.param("layer")) {
 
 benchmarks.start("Extra loading time");
 
-d3.json("us-counties.geojson",function(err,geodata) {
+d3.json("us-counties.topojson",function(err,geodata) {
 
   benchmarks.stop("Extra loading time");
 
@@ -62,7 +62,7 @@ d3.json("us-counties.geojson",function(err,geodata) {
 
   var ww = Wherewolf();
 
-  ww.add("county",geodata);
+  ww.add("county",geodata,"counties");
 
   benchmarks.stop("Time to prep features for search");
 

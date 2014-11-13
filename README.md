@@ -3,44 +3,49 @@
 
 A server-less boundary service. Find what geographic feature (e.g. an election district) a given point lies in.
 
-# Benchmarks
+# Performance
 
-So far, in Chrome:
+As a stress test of performance, we tried adding all 3141 counties in the United States as a Wherewolf layer and then searching it for 5000 random nearby points.  In most instances, finding the containing feature for a point took less than a tenth of a millisecond.  In the worst case, it took about 8 milliseconds.
 
-## GeoJSON
+* **Chrome 38 (OS X, Macbook Pro):** 53ms to initialize, 0.08ms to search each point
+* **Safari 7.0.2 (OS X, Macbook Pro):** 11ms to initialize, 0.07ms to search each point
+* **Firefox 33 (OS X, Macbook Pro):** 23ms to initialize, 0.07ms to search each point
+* **Chrome 34 (Android 4.4.4, Nexus 5):** 53ms to initialize, 0.72ms to search each point
+* **IE9 (Windows 7):** 32ms to initialize, 0.62ms to search each point
+* **IE10 (Windows 7):** 20ms to initialize, 0.54ms to search each point
+* **Firefox 29 (Android 2.3.4):** 267ms to initialize, 8.2ms to search each point
+* **Mobile Safari (iOS 7, iPhone 5C):** 48ms to initialize, 1.1ms to search each point
+* **Chrome 38 (iOS 7, iPad Mini):** 53ms to initialize, 1.74ms to search each point
 
-* 11ms to initialize a Boundless instance from that data
-* 0.008ms to locate a lat/lng
+The main performance limitation when using Wherewolf is the size of the GeoJSON or TopoJSON files you have to load in before you can search.  But you can get these files pretty small by a) converting to TopoJSON, b) removing extraneous attribute info, and c) gzipping.  Even the file of all the counties in the US is only 78k as gzipped TopoJSON, which will download in about 1.8 seconds on a 3G connection, or 73 milliseconds on a 30mbps Wifi connection.
 
-At 3G speed (750 kbps):
-* 12394ms to load a 1.1mb GeoJSON file of lower 48 states
-* 164ms to geocode and locate an address
+If you have concerns about initial load time due to file size, a fancy approach would to be divide the features into subsets and only initially load a GeoJSON file with the bounding box for each subset.  For example, you could have `northwest-us.topojson`, `southwest-us.topojson`, `northeast-us.topojson`, and `southeast-us.topojson`, and `quadrants.topojson`.  Then you could do something like:
 
-At DSL speed (2 mpbs):
-* 4270ms to load a 1.1mb GeoJSON file of lower 48 states
-* 84ms to geocode and locate an address
+    ww.add("quadrants",quadrants);
 
-On Wifi (30mpbs):
-* 311ms to load a 1.1mb GeoJSON file of lower 48 states
-* 56ms to geocode and locate an address
+    //When you need to search...
+    var quadrant = ww.find([lng,lat],{layer:"quadrants"});
 
-## TopoJSON
+    //If they are in one of the four rectangles,
+    //Load that file and search it
+    //You're only loading/search 25% of the counties
+    if (quadrant.name) {
+      $.getJSON(quadrant.name+".topojson",function(counties){
+        ww.add("counties",counties);
+        var theCountyTheyAreIn = ww.find([lng,lat],{layer:"counties"});
+      });
+    }
 
-* 12ms to initialize a Boundless instance from that data
-* 0.008ms to locate a lat/lng
+In this way, you load very little data up front, but the downside is you introduce a bit of extra delay when they search.
 
-At 3G speed (750 kbps):
-* 811ms to load a 60k GeoJSON file of lower 48 states
+# Fine print
 
-At DSL speed (2 mpbs):
-* 274ms to load a 60k TopoJSON file of lower 48 states
-
-On Wifi (30mpbs):
-* 25ms to load a 60k TopoJSON file of lower 48 states
+* This will probably not work for a feature that crosses the North or South Pole.
+* This may not work for a very special case of a point that lies right on the antimeridian being checked against a feature that crosses the antimeridian. It's unclear whether any scenario on the actual earth can cause this problem.  Don't worry, the Aleutian Islands work fine.
 
 # Credits/License
 
-By Noah Veltman and Jenny Ye
+By [Noah Veltman](https://twitter.com/veltman) and [Jenny Ye](https://twitter.com/thepapaya)
 
 Special thanks to:
 
