@@ -476,7 +476,7 @@
 
   //Check whether a number is a number
   function _isNumber(num){
-    return toString.call(num) === '[object Number]' && !isNaN(num);
+    return typeof(num) === "number" && !isNaN(num);
   }
 
   //ray-casting algorithm based on
@@ -568,9 +568,9 @@
   //If it's a node module, export it
   } else if (npm) {
     module.exports = ww;
+  } else {
+    //Add as global
+    this.Wherewolf = ww;
   }
-
-  //Add as global
-  this.Wherewolf = ww;
 
 })();
