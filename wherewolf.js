@@ -60,7 +60,7 @@
     //Not valid
     } else {
 
-      throw new Error("No valid GeoJSON or TopoJSON supplied.");
+      throw new TypeError("No valid GeoJSON or TopoJSON supplied.");
 
     }
 
@@ -93,7 +93,7 @@
     //Invalid Topology
     } else {
 
-      throw new Error(".addAll() requires a valid TopoJSON object.");
+      throw new TypeError(".addAll() requires a valid TopoJSON object.");
 
     }
 
@@ -137,16 +137,19 @@
 
     //if they supplied an object with lat and lng, that's OK
     //{lng: 45, lat: 45} instead of [45,45]
-    if (point.lat && point.lng) {
+    if (point && point.lat && point.lng) {
       return this.find([point.lng,point.lat],options);
+    }
+
     //Check for a valid point
-    } else if (!Array.isArray(point) || point.length !== 2 || !_isNumber(point[0]) || !_isNumber(point[1])) {
-      throw new Error("Invalid point.  Latitude/longitude required.");
+    if (!Array.isArray(point) || point.length !== 2 || !_isNumber(point[0]) || !_isNumber(point[1])) {
+      throw new TypeError("Invalid point.  Latitude/longitude required.");
     }
 
     //If they want a specific layer, return that result
     if (options.layer) {
 
+      //FIX: pass all options
       if (options.layer in this.layers) {
         return _findLayer(point,this.layers[options.layer],!!options.wholeFeature);
       }
@@ -174,6 +177,7 @@
   }
 
   //Get or set the search bounds for findAddress
+  //FIX: option for FindAddress?
   Wherewolf.prototype.bounds = function(bounds) {
 
     //If no arguments, get existing bounds
@@ -188,7 +192,7 @@
       //Clear cached google bounds
       delete this._googleBounds;
     } else {
-      throw new Error("Invalid bounds received.  Must be: [[min lng,min lat],[max lng,max lat]]");
+      throw new TypeError("Invalid bounds received.  Must be: [[min lng,min lat],[max lng,max lat]]");
     }
 
     return this;
@@ -245,14 +249,12 @@
 
     }
 
-    var that = this;
-
     //Do geocoding
     this.geocoder.geocode(search,function(results, status) {
 
       //If google error, return that
       if (status != google.maps.GeocoderStatus.OK) {
-        return cb(status,null);
+        return cb(new Error("Google geocoder error: "+status));
       }
 
       //If search bounds, filter results on those bounds
@@ -262,7 +264,7 @@
 
           var lnglat = [result.geometry.location.lng(),result.geometry.location.lat()];
 
-          return _inBox(lnglat,that._bounds);
+          return _inBox(lnglat,this._bounds);
 
         });
 
@@ -270,22 +272,30 @@
 
       //If no results, return that
       if (!results.length) {
-        return cb("No location found.",null);
+        return cb(new Error("No matching lat/lng found."));
       }
 
       var lnglat = [results[0].geometry.location.lng(),results[0].geometry.location.lat()];
 
       //Do .find() on the point, passing options
       //Return {lng: x, lat: y} as a third argument
-      cb(null,that.find(lnglat,options),{
+
+      try {
+        var found = this.find(lnglat,options);
+      } catch (e) {
+        return cb(e);
+      }
+
+      return cb(null,found,{
         "lng": lnglat[0],
         "lat": lnglat[1]
       });
 
-    });
+    }.bind(this));
 
   };
 
+  //FIX: wholeFeature as all options
   //Find a point in a specific layer
   function _findLayer(point,layer,wholeFeature) {
 
@@ -352,7 +362,7 @@
     //If it has no objects, it's invalid
     if (!collection.objects) {
 
-      throw new Error("Invalid TopoJSON.");
+      throw new TypeError("Invalid TopoJSON.");
 
     }
 
@@ -376,6 +386,10 @@
       } else if (keys.length > 1) {
 
         throw new Error("You supplied a topology with multiple objects: "+JSON.stringify(keys)+".  Specify an object to add, or use .addAll().");
+
+      } else {
+
+        throw new Error("No objects found in topology.");
 
       }
 
