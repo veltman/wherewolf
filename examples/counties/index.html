@@ -46,7 +46,7 @@ if ($.url.param("layer")) {
 
 benchmarks.start("Extra loading time");
 
-d3.json("lower48-with-holes.geojson",function(err,geodata) {
+d3.json("us-counties.geojson",function(err,geodata) {
 
   benchmarks.stop("Extra loading time");
 
@@ -54,11 +54,11 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
   var ww = Wherewolf();
 
-  ww.add("state",geodata);
+  ww.add("county",geodata);
 
   benchmarks.stop("Time to prep features for search");
 
-  var bg = geodata.type == "Topology" ? topojson.feature(geodata,geodata.objects.state) : geodata;
+  var bg = geodata.type == "Topology" ? topojson.feature(geodata,geodata.objects.counties) : geodata;
 
   //Create a path for each map feature in the data
   features.selectAll("path")
@@ -67,9 +67,9 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
     .append("path")
     .attr("d",path);
 
-  var bounds = pad(d3.geo.bounds(bg));
+  var bounds = [[-131,20],[-60,52]];
 
-  var points = d3.range(2000).map(function(){
+  var points = d3.range(5000).map(function(){
     return [
       bounds[0][0]+Math.random()*(bounds[1][0]-bounds[0][0]),
       bounds[0][1]+Math.random()*(bounds[1][1]-bounds[0][1]),
@@ -89,7 +89,7 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
   });
 
-  benchmarks.start("Time to check 2000 lat/lngs");
+  benchmarks.start("Time to check "+points.length+" lat/lngs");
 
   points = points.map(function(p){
 
@@ -99,7 +99,7 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
   });
 
-  benchmarks.stop("Time to check 2000 lat/lngs");
+  benchmarks.stop("Time to check "+points.length+" lat/lngs");
 
   var colorsByName = {};
 
@@ -120,26 +120,26 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
       .filter(function(d){
         return d.found && (
           //layer is not set
-          (d.found.state && 
+          (d.found.county && 
             //wholeFeature=true          wholeFeature=false
-            (d.found.state.properties || d.found.state.name)) ||
-          //layer="state"
+            (d.found.county.properties || d.found.county.FIPS)) ||
+          //layer="county"
           //wholeFeature=true    wholeFeature=false
-          (d.found.properties || d.found.name)
+          (d.found.properties || d.found.FIPS)
         );
       })
         .style("fill",function(d){
           var name;
-          if (d.found.name) {
-            name = d.found.name;
-          } else if (d.found.state) {
-            if (d.found.state.properties) {
-              name = d.found.state.properties.name;
+          if (d.found.FIPS) {
+            name = d.found.FIPS;
+          } else if (d.found.county) {
+            if (d.found.county.properties) {
+              name = d.found.county.properties.FIPS;
             } else {
-              name = d.found.state.name;
+              name = d.found.county.FIPS;
             }
           } else {
-            name = d.found.properties.name;
+            name = d.found.properties.FIPS;
           }
 
           if (!colorsByName[name]) {
