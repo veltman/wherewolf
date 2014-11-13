@@ -176,29 +176,6 @@
     Wherewolf.prototype.findAddress = _findAddress;
   }
 
-  //Get or set the search bounds for findAddress
-  //FIX: option for FindAddress?
-  Wherewolf.prototype.bounds = function(bounds) {
-
-    //If no arguments, get existing bounds
-    if (!arguments.length) {
-      return this._bounds || null;
-    }
-
-    //Check that bounds is valid
-    if (_validBounds(bounds)) {
-      //Set the bounds
-      this._bounds = bounds;
-      //Clear cached google bounds
-      delete this._googleBounds;
-    } else {
-      throw new TypeError("Invalid bounds received.  Must be: [[min lng,min lat],[max lng,max lat]]");
-    }
-
-    return this;
-
-  };
-
   //Find an address
   function _findAddress(address,a,b) {
 
@@ -237,15 +214,20 @@
     };
 
     //Use cached google bounds, or create it
-    if (this._googleBounds) {
-      search.bounds = this._googleBounds;
+    if (options.bounds) {
 
-    } else if (this._bounds) {
+      try {
 
-      search.bounds = this._googleBounds = new google.maps.LatLngBounds(
-        new google.maps.LatLng(this._bounds[0][1],this._bounds[0][0]),
-        new google.maps.LatLng(this._bounds[1][1],this._bounds[1][0])
-      );
+        search.bounds = new google.maps.LatLngBounds(
+          new google.maps.LatLng(options.bounds[0][1],options.bounds[0][0]),
+          new google.maps.LatLng(options.bounds[1][1],options.bounds[1][0])
+        );
+
+      } catch(e) {
+
+        throw new TypeError("Invalid value for bounds. Bounds should be in the format: [[minLng,minLat],[maxLng,maxLat]]");
+
+      }
 
     }
 
@@ -415,29 +397,6 @@
     }
 
     return features;
-
-  }
-
-  //Is a bounding box valid?
-  function _validBounds(b) {
-
-    if (!Array.isArray(b) || b.length !== 2) {
-      return false;
-    }
-
-    if (!Array.isArray(b[0]) || b[0].length !== 2) {
-      return false;
-    }
-
-    if (!Array.isArray(b[1]) || b[1].length !== 2) {
-      return false;
-    }
-
-    if (b[0][0] > b[1][0] || b[0][1] > b[1][1]) {
-      return false;
-    }
-
-    return true;
 
   }
 
