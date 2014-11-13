@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="style.css" type="text/css" />
+<body>
+<div id="form"><input type="text" id="address"/></div>
+<div id="map"></div>
+<div id="results"></div>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script src="//maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="../../wherewolf.js"></script>
+<script>
+
+   var options = {center:{lat:40.8,lng:-73.9},zoom: 10},
+       map = new google.maps.Map(document.getElementById("map"),options),
+       marker = new google.maps.Marker();
+
+  $.getJSON("timezones.geojson",function(data){
+
+    var ww = Wherewolf();
+        ww.add("Time Zone",data, "Time Zone");
+
+    $("input").on("change",function(){
+
+      ww.findAddress($(this).val(),function(err,results,ll){
+
+        $("#results div").remove();
+
+        for (var key in results) {
+          $("#results").append("<div><strong>"+key+"</strong>"+(results[key] ? results[key].name : "Not found")+"</div>");
+        }
+
+        map.setCenter(ll || options.center);
+        map.setZoom(ll ? 15 : options.zoom);
+
+        if (ll) {
+          marker.setMap(map);
+          marker.setPosition(ll);
+        } else {
+          marker.setMap(null);
+        }
+
+      });
+
+      return false;
+
+    });
+
+  });
+</script>
