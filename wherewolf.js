@@ -9,13 +9,13 @@
     tj = topojson;
   }
 
-  var bl = function() {
+  var ww = function() {
 
-    return new Boundless();
+    return new Wherewolf();
 
   };
 
-  var Boundless = function() {
+  var Wherewolf = function() {
 
     this.layers = {};
 
@@ -23,7 +23,7 @@
 
   };
 
-  Boundless.prototype.add = function(name,collection,key) {
+  Wherewolf.prototype.add = function(name,collection,key) {
 
     var features;
 
@@ -62,7 +62,7 @@
 
   };
 
-  Boundless.prototype.addAll = function(topology) {
+  Wherewolf.prototype.addAll = function(topology) {
 
     if (topology.type && topology.type === "Topology" && topology.objects) {
 
@@ -80,7 +80,7 @@
 
   };
 
-  Boundless.prototype.remove = function(layerName) {
+  Wherewolf.prototype.remove = function(layerName) {
 
     if (layerName in this.layers) {
       delete this.layers[layerName];
@@ -89,7 +89,7 @@
     return this;
   };
 
-  Boundless.prototype.layerNames = function() {
+  Wherewolf.prototype.layerNames = function() {
 
     var names = [];
 
@@ -101,7 +101,7 @@
 
   };
 
-  Boundless.prototype.find = function(point,options) {
+  Wherewolf.prototype.find = function(point,options) {
 
     var results;
 
@@ -138,10 +138,10 @@
 
   //findAddress is client-side only for now
   if (!npm) {
-    Boundless.prototype.findAddress = _findAddress;
+    Wherewolf.prototype.findAddress = _findAddress;
   }
 
-  Boundless.prototype.bounds = function(bounds) {
+  Wherewolf.prototype.bounds = function(bounds) {
 
     if (!arguments.length) {
       return this._bounds || null;
@@ -490,14 +490,14 @@
 
   }
 
-  bl.version = "1.0.0";
+  ww.version = "1.0.0";
 
   if (typeof define === "function" && define.amd) {
-    define(bl);
+    define(ww);
   } else if (npm) {
-    module.exports = bl;
+    module.exports = ww;
   }
 
-  this.Boundless = bl;
+  this.Wherewolf = ww;
 
 })();

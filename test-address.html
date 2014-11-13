@@ -67,7 +67,7 @@ pre {
 <script src="d3.v3.min.js"></script>
 <script src="http://d3js.org/queue.v1.min.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
-<script src="boundless.js"></script>
+<script src="wherewolf.js"></script>
 <script>
 
 //Map dimensions (in pixels)
@@ -96,9 +96,9 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
   benchmarks.start("Time to prep features for search");
 
-  var bl = new Boundless();
+  var ww = new Wherewolf();
 
-  bl.add("state",geodata);
+  ww.add("state",geodata);
 
   benchmarks.stop("Time to prep features for search");
 
@@ -138,11 +138,11 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
   var colorsByName = {};
 
   queue()
-    .defer(addAddress,"160 Varick St, New York, NY",bl)
-    .defer(addAddress,"100 Tigertail Road, Los Angeles, CA",bl)
-    .defer(addAddress,"1150 15th St NW, Washington, D.C. 20071",bl)
-    .defer(addAddress,"900 6th Ave SE #220, Minneapolis, MN 55414",bl)
-    .defer(addAddress,"Rancho Agua Caliente 6911, Pradera Dorada, 32610 Juárez, CHIH, Mexico",bl)
+    .defer(addAddress,"160 Varick St, New York, NY",ww)
+    .defer(addAddress,"100 Tigertail Road, Los Angeles, CA",ww)
+    .defer(addAddress,"1150 15th St NW, Washington, D.C. 20071",ww)
+    .defer(addAddress,"900 6th Ave SE #220, Minneapolis, MN 55414",ww)
+    .defer(addAddress,"Rancho Agua Caliente 6911, Pradera Dorada, 32610 Juárez, CHIH, Mexico",ww)
     .awaitAll(function(err,locations){
 
       benchmarks.stop("Time to check 5 addresses");

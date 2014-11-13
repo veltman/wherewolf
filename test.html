@@ -67,7 +67,7 @@ pre {
 <script src="d3.v3.min.js"></script>
 <script src="http://d3js.org/queue.v1.min.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
-<script src="boundless.js"></script>
+<script src="wherewolf.js"></script>
 <script>
 
 //Map dimensions (in pixels)
@@ -96,9 +96,9 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
   benchmarks.start("Time to prep features for search");
 
-  var bl = new Boundless();
+  var ww = new Wherewolf();
 
-  bl.add("state",geodata);
+  ww.add("state",geodata);
 
   benchmarks.stop("Time to prep features for search");
 
@@ -137,7 +137,7 @@ d3.json("lower48-with-holes.geojson",function(err,geodata) {
 
   points = points.map(function(p){
 
-    p.found = bl.find([p.lng,p.lat],{wholeFeature:true,layer:"state"});
+    p.found = ww.find([p.lng,p.lat],{wholeFeature:true,layer:"state"});
 
     return p;
 
