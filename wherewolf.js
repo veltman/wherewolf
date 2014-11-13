@@ -111,7 +111,7 @@
 
     //if they supplied an object with lat and lng, that's OK
     if (point.lat && point.lng) {
-      return this.find([point.lng,point.lat],layerName);
+      return this.find([point.lng,point.lat],options);
     } else if (!Array.isArray(point) || point.length !== 2 || !_isNumber(point[0]) || !_isNumber(point[1])) {
       throw new Error("Invalid point.  Latitude/longitude required.");
     }

@@ -1,17 +1,15 @@
-var boundless = require("./boundless.js"),
+var Wherewolf = require("../../wherewolf.js"),
     fs = require("fs"),
     topojson = require("topojson");
 
-var bl = boundless();
-
-var bl2 = boundless();
+var ww = Wherewolf();
 
 var geo = JSON.parse(fs.readFileSync("lower48-with-holes.geojson",{encoding:"utf8"}));
 
-bl.add("state",geo);
+ww.add("state",geo);
 
-console.log(bl.find([-75,40]));
-console.log(bl.find({
+console.log(ww.find([-75,40]));
+console.log(ww.find({
 	"lng":-75,
 	"lat":40
 }));
