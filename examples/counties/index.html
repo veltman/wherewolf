@@ -36,6 +36,14 @@ var benchmarks = new Benchmarks(),
     colors = ["#ff0","#0ff","#0f0","#f0f"],
     options = {};
 
+//Create zoom/pan listener
+//Change [1,Infinity] to adjust the min/max zoom scale
+var zoom = d3.behavior.zoom()
+    .scaleExtent([-Infinity, Infinity])
+    .on("zoom",zoomed);
+
+svg.call(zoom);
+
 if ($.url.param("wholeFeature")) {
   options.wholeFeature = true;
 }
@@ -193,6 +201,13 @@ function Benchmarks() {
       return marks;
     }
   };
+}
+
+
+//Update map on zoom/pan
+function zoomed() {
+  features.attr("transform", "translate(" + zoom.translate() + ")scale(" + zoom.scale() + ")")
+      .selectAll("path").style("stroke-width", 1 / zoom.scale() + "px" );
 }
 
 </script>
