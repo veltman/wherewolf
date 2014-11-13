@@ -151,7 +151,7 @@
 
       //FIX: pass all options
       if (options.layer in this.layers) {
-        return _findLayer(point,this.layers[options.layer],!!options.wholeFeature);
+        return _findLayer(point,this.layers[options.layer],options);
       }
 
       throw new Error("Layer '"+layerName+"' not found.");
@@ -162,7 +162,7 @@
       results = {};
 
       for (var key in this.layers) {
-        results[key] = _findLayer(point,this.layers[key],!!options.wholeFeature);
+        results[key] = _findLayer(point,this.layers[key],options);
       }
 
     }
@@ -279,7 +279,7 @@
 
   //FIX: wholeFeature as all options
   //Find a point in a specific layer
-  function _findLayer(point,layer,wholeFeature) {
+  function _findLayer(point,layer,options) {
 
     //Check each feature in the layer
     for (var i = 0, l = layer.length; i < l; i++) {
@@ -287,7 +287,7 @@
       //If the point is inside this feature,
       //return its properties or the feature itself
       if (_inside(point,layer[i])) {
-        return wholeFeature ? layer[i] : layer[i].properties;
+        return !!options.wholeFeature ? layer[i] : layer[i].properties;
       }
 
     }
