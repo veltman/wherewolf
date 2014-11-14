@@ -453,7 +453,7 @@
   }
 
   //Set a version number
-  ww.version = "1.0.0";
+  ww.version = "0.0.9";
 
   //If it's being included as an AMD module, define() it
   if (typeof define === "function" && define.amd) {
