@@ -7,21 +7,21 @@ var point = [-74.005363,40.726760]; //wnyc office
 //options, point style, type of file
 
 //check topojson add
-fs.readFile("../examples/nyc/districts.topojson", "utf8", function(err, data){
+fs.readFile("../examples/nyc/districts.json", "utf8", function(err, data){
 	//console.log(data);
 	data = JSON.parse(data);
     ww = Wherewolf();
     ww.addAll(data);
 
 	assert.deepEqual(ww.layerNames().length, 9, ["wrong number of layers"]);
-	assert.deepEqual(ww.remove("Police Precinct").layerNames().length, 8, ["remove error"]);
-	assert.deepEqual(ww.find({lat:point[1], lng:point[0]}).Borough.name,"Manhattan", ["find dict point error"]);
-	assert.deepEqual(ww.find(point).Borough.name,"Manhattan", ["find array point error"]);
+	assert.deepEqual(ww.remove("Police Precinct (NYC)").layerNames().length, 8, ["remove error"]);
+	assert.deepEqual(ww.find({lat:point[1], lng:point[0]})["Borough (NYC)"].name,"Manhattan", ["find dict point error"]);
+	assert.deepEqual(ww.find(point)["Borough (NYC)"].name,"Manhattan", ["find array point error"]);
 
 	//find options
-	assert.deepEqual(ww.find(point,{layer: "Borough"}).name,"Manhattan", ["layer option search error"]);
-	assert.deepEqual(ww.find(point,{wholeFeature: true}).Neighborhood.type, "Feature", ["whole feature search error"]);
-	assert.deepEqual(ww.find(point,{wholeFeature: true, layer: "Borough"}).type, "Feature", ["whole feature + layer search error"]);
+	assert.deepEqual(ww.find(point,{layer: "Borough (NYC)"}).name,"Manhattan", ["layer option search error"]);
+	assert.deepEqual(ww.find(point,{wholeFeature: true})["Neighborhood (NYC)"].type, "Feature", ["whole feature search error"]);
+	assert.deepEqual(ww.find(point,{wholeFeature: true, layer: "Borough (NYC)"}).type, "Feature", ["whole feature + layer search error"]);
 });
 
 //check geojson add
