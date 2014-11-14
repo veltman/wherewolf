@@ -215,12 +215,20 @@
         return _pip(point,ring);
       };
 
+
+      //If it's a point, return true if 
+      //given point is the same
+      if (feature.geometry.type === "Point") {
+        return point[0] == feature.geometry.coordinates[0] && point[1] == feature.geometry.coordinates[1];
+      }
+
       //If it's a polygon, return true if
       //point is in the first ring AND not
       //in any other rings (holes)
-      if (feature.geometry.type === "Polygon") {
+      if (feature.geometry.type === "Polygon" ) {
         return inRing(feature.geometry.coordinates[0]) && !feature.geometry.coordinates.slice(1).some(inRing);
       }
+
 
       //Otherwise assume it's a MultiPolygon
       //Return true if it's in any of the
@@ -325,6 +333,13 @@
       return f[0];
     });
 
+    //if it's a point, put in an array
+    if (feature.geometry.type === "Point"){
+      outer = [[feature.geometry.coordinates]];
+    }
+
+ 
+
     //For each point, extend bounds as needed
     var bounds = [[Infinity,Infinity],[-Infinity,-Infinity]];
 
@@ -346,8 +361,9 @@
       });
 
     });
-
+   
     return bounds;
+
 
   }
 
