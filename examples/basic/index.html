@@ -46,24 +46,27 @@
   //a state with Carl's Jr, Hardee's, or both
   $.getJSON("carlsjr_hardees.json",function(data){
 
-    ww.add("burgers",data);
+    //Add a layer named "burgerChains" to wherewolf
+    ww.add("burgerChains",data);
 
     points.forEach(function(point){
 
+      //Use wherewolf to find the matching feature and
+      //return its properties
       var result = ww.find(point),
           color = "blue";
 
-      //If they have either
-      if (result.burgers) {
-        if (result.burgers.carlsJr) {
-          if (result.burgers.hardees) {
+      //If the feature has either burger chain
+      if (result.burgerChains) {
+        if (result.burgerChains.carlsJr) {
+          if (result.burgerChains.hardees) {
             //Both Hardee's and Carl's Jr
             color = "orange";
           } else {
             //Just Carl's Jr.
             color = "red";
           }
-        } else if (result.burgers.hardees) {
+        } else if (result.burgerChains.hardees) {
           //Just Hardee's
           color = "yellow";
         }
