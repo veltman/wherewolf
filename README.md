@@ -3,6 +3,24 @@ Wherewolf
 
 A server-less boundary service. Find what geographic feature (e.g. an election district) a given point lies in.
 
+[Very brief example code]
+
+[blah blah blah intro]
+
+[examples of when we use it at WNYC]
+
+[To locate an address instead of a lat/lng, you need to geocode it first.  see the examples.]
+
+[including in browser]
+
+[installing via npm]
+
+# Dependencies
+
+If you're using it in the browser, and your data is GeoJSON, there are no dependencies.
+
+If you're using it in the browser, and your data is TopoJSON, include the topojson library first.
+
 # API
 
 ## Wherewolf.add(layerName,features[,key])
@@ -31,10 +49,21 @@ ex: If a Wherewolf w has layers ["Senate", "Assembly", "School District"], and w
 
 ## Wherewolf.layerNames()
 
+
 Returns an array of current layer names.
 
 ex: ["Senate", "Assembly", "School District"]
 
+=======
+# Examples
+
+* Basic
+* Multiple layers
+* Add all TopoJSON objects at once
+* Options
+* Geocode an address
+* New York boundary service
+* Use as a Node module
 
 # Performance
 
@@ -84,9 +113,9 @@ By [Noah Veltman](https://twitter.com/veltman) and [Jenny Ye](https://twitter.co
 Special thanks to:
 
 * [WNYC](http://www.wnyc.org/)
-* [OpenNews](http://opennews.org)
+* [OpenNews](http://opennews.org) - this was released as part of the November 2014 OpenNews Code Convening
 * [Substack](https://github.com/substack) for his [point-in-polygon module](https://github.com/substack/point-in-polygon)
-* [Mike Bostock](https://github.com/mbostock) for [D3](http://d3js.org/) and [TopoJSON](https://github.com/mbostock/topojson)
+* [Mike Bostock](https://github.com/mbostock) for [TopoJSON](https://github.com/mbostock/topojson)
 
 Available under the MIT license.
 
