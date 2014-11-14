@@ -39,6 +39,8 @@ var <span class="red">result</span> = ww.find([40.7153051,-73.9981801]<span id="
 
   $.getJSON("example-results.json",function(results){
 
+    update();
+
     $("button").on("click",function(){
 
       var $this = $(this);
@@ -46,6 +48,12 @@ var <span class="red">result</span> = ww.find([40.7153051,-73.9981801]<span id="
       $this.addClass("active").siblings().removeClass("active");
 
       options[$this.data("key")] = $this.data("value");
+
+      update();
+
+    });
+
+    function update(){
 
       var tempResult,
           tempOptions = {};
@@ -80,7 +88,7 @@ var <span class="red">result</span> = ww.find([40.7153051,-73.9981801]<span id="
 
       $("#result").text(JSON.stringify(tempResult,null,"  "));
 
-    });
+    }
 
   });
 
