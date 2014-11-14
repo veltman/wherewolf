@@ -20,23 +20,63 @@
 <script src="../../wherewolf.js"></script>
 <script>
 
-  var map = L.map("map").setView([51.505, -0.09], 13);
+  //Initialize the map
+  var map = L.map("map");
 
+  //Add tiles
+  L.tileLayer('http://{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.png', {
+    attribution: 'Map tiles &copy; <a href="http://stamen.com">Stamen Design</a> (<a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>). Data &copy; <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors (<a href="http://opendatacommons.org/licenses/odbl/">ODbL</a>).',
+    subdomains: 'abcd'
+  }).addTo(map);
+
+  //Fit to the continental US
+  map.fitBounds([
+    [24.3,-125.3],
+    [49.9,-65.7]
+  ]);
+
+  //Initialize a wherewolf
   var ww = Wherewolf();
 
-  var points = [
-    [-80,35]
-  ];
+  //Some random points
+  //LONGITUDE FIRST
+  var points = [[-105.89245116179809,32.66968821287155],[-118.40044993394986,34.85802121758461],[-81.80253364238888,31.282342028617858],[-105.10136343110352,44.61306293010712],[-91.95875134915113,47.314496570825575],[-97.78551514381543,29.72521533370018],[-106.49897644985467,39.5555215716362],[-93.88655431056395,31.766690903902052],[-83.10371991256252,29.7997485101223],[-97.85495031084865,34.78963323831558],[-113.63085945080965,36.08796715736389],[-115.18087026104331,42.66135771870613],[-88.04447065982967,34.39069209098816],[-90.83795804316178,34.7407722234726],[-111.93559739449992,46.43833055496216],[-84.726562499,38.75408327579141],[-78.31054687499,40.713955826286046],[-78.134765625,37.92686760148135],[-96.6796875,34.95799531086792],[-69.609374999,45.1510532655634],[-75.146484375,42.74701217318067]];
 
+  //Find out whether a point is in
+  //a state with Carl's Jr, Hardee's, or both
   $.getJSON("carlsjr_hardees.json",function(data){
 
     ww.add("burgers",data);
 
     points.forEach(function(point){
 
-      var result = ww.find(point);
+      var result = ww.find(point),
+          color = "blue";
 
-      console.log(result);
+      //If they have either
+      if (result.burgers) {
+        if (result.burgers.carlsJr) {
+          if (result.burgers.hardees) {
+            //Both Hardee's and Carl's Jr
+            color = "orange";
+          } else {
+            //Just Carl's Jr.
+            color = "red";
+          }
+        } else if (result.burgers.hardees) {
+          //Just Hardee's
+          color = "yellow";
+        }
+      }
+
+      //Add a color-coded circle
+      L.circleMarker({lat: point[1], lng: point[0]},{
+        "radius": 8,
+        "stroke": false,
+        "color": color,
+        "opacity": 0.6,
+        "fillOpacity": 0.6
+      }).addTo(map);
 
     });
 
