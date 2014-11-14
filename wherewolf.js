@@ -101,6 +101,16 @@
 
   };
 
+  //Get a layer's features
+  Wherewolf.prototype.get = function(layerName) {
+
+    if (layerName in this.layers) {
+      return this.layers[layerName];
+    }
+
+    return null;
+  };
+
   //Remove a layer by name
   Wherewolf.prototype.remove = function(layerName) {
 
@@ -168,112 +178,6 @@
     }
 
     return results;
-
-  };
-
-  //findAddress is client-side only for now
-  if (!npm) {
-    Wherewolf.prototype.findAddress = _findAddress;
-  }
-
-  //Find an address
-  function _findAddress(address,a,b) {
-
-    var options,
-        cb;
-
-    //All these are allowed:
-    //findAddress("address",callback,{options})
-    //findAddress("address",{options},callback)
-    //findAddress("address",callback)
-    if (arguments.length === 3) {
-      if (typeof a === "function") {
-        cb = a;
-        options = b;
-      } else {
-        options = a;
-        cb = b;
-      }
-    } else if (arguments.length === 2) {
-      cb = a;
-      options = {};
-    }
-
-    if (!this.geocoder) {
-      //Try to initialize google geocoder
-      try {
-        this.geocoder = new google.maps.Geocoder();
-      } catch (e) {
-        throw new Error("Couldn't initialize Google geocoder. Make sure you've included the Google Maps API too (https://developers.google.com/maps/documentation/javascript/).");
-      }
-    }
-
-    //Format search parameters for google geocoder
-    var search = {
-      "address": address
-    };
-
-    //Use cached google bounds, or create it
-    if (options.bounds) {
-
-      try {
-
-        search.bounds = new google.maps.LatLngBounds(
-          new google.maps.LatLng(options.bounds[0][1],options.bounds[0][0]),
-          new google.maps.LatLng(options.bounds[1][1],options.bounds[1][0])
-        );
-
-      } catch(e) {
-
-        throw new TypeError("Invalid value for bounds. Bounds should be in the format: [[minLng,minLat],[maxLng,maxLat]]");
-
-      }
-
-    }
-
-    //Do geocoding
-    this.geocoder.geocode(search,function(results, status) {
-
-      //If google error, return that
-      if (status != google.maps.GeocoderStatus.OK) {
-        return cb(new Error("Google geocoder error: "+status));
-      }
-
-      //If search bounds, filter results on those bounds
-      if (search.bounds) {
-
-        results = results.filter(function(result){
-
-          var lnglat = [result.geometry.location.lng(),result.geometry.location.lat()];
-
-          return _inBox(lnglat,this._bounds);
-
-        });
-
-      }
-
-      //If no results, return that
-      if (!results.length) {
-        return cb(new Error("No matching lat/lng found."));
-      }
-
-      var lnglat = [results[0].geometry.location.lng(),results[0].geometry.location.lat()];
-
-      //Do .find() on the point, passing options
-      //Return {lng: x, lat: y} as a third argument
-
-      try {
-        var found = this.find(lnglat,options);
-      } catch (e) {
-        return cb(e);
-      }
-
-      return cb(null,found,{
-        "lng": lnglat[0],
-        "lat": lnglat[1]
-      });
-
-    }.bind(this));
 
   };
 
