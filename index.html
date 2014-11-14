@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <style>
+
+      </style>
+      <title>Wherewolf.js</title>
+      <meta charset="utf-8">
+      <link href="http://fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet" type="text/css">
+      <link href="markdown.css" rel="stylesheet" />     
+      <link href="github.css" rel="stylesheet" />
+    </head>  
+  <body>
+    <p><img alt="Wherewolf" src="./wherewolf-logo.png"/></p>
+
+<h1>Wherewolf</h1>
+
+<p>Wherewolf is a server-less boundary service.  Given a set of geographic features and a point, it will tell you which feature that point lies in.</p>
+
+<pre><code>var teenWolf = Wherewolf();
+teenWolf.add(&quot;Flood Zone&quot;,floodZones);
+
+var result = teenWolf.find({lat: 40.7, lng: -74.1});
+console.log(result[&quot;Flood Zone&quot;]);
+//{zone: &quot;A&quot;}</code></pre>
+
+<p>We&#39;ve used earlier versions of this approach for things like the <a href="http://project.wnyc.org/election-guide-2014/">2014 Election Guide</a>, where you enter your address to see which state assembly, state senate, and congressional district you&#39;re in, and <a href="http://data.schoolbook.org/">SchoolBook</a>, where we locate your school district based on your address.</p>
+
+<p>Wherewolf uses latitude/longitude points, so if you&#39;re starting from an address, you need to <a href="http://en.wikipedia.org/wiki/Geocoding">geocode</a> it first.  See the <strong>Examples</strong> section below for how to geocode addresses and feed them to a Wherewolf.</p>
+
+<p>A more full-featured alternative to Wherewolf is <a href="https://github.com/newsapps/django-boundaryservice">django-boundaryservice</a>.  The upside of Wherewolf is that you don&#39;t have to configure, administer, or pay for a database or a server.  For some details on performance considerations, see the <strong>Performance</strong> and <strong>Fine Print</strong> sections at the bottom.</p>
+
+<h1>Use/Requirements</h1>
+
+<p>You need a GeoJSON or TopoJSON version of your boundaries.</p>
+
+<p>If you&#39;re summoning a Wherewolf in a browser, include <code>wherewolf.js</code> as a normal script:</p>
+
+<pre><code>&lt;script src=&quot;wherewolf.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+  var teenWolf = Wherewolf();
+&lt;/script&gt;</code></pre>
+
+<p>If you&#39;re using GeoJSON boundaries, there are no dependencies.  If you&#39;re using TopoJSON, you must include the TopoJSON client library first:</p>
+
+<pre><code>&lt;script src=&quot;http://d3js.org/topojson.v1.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;wherewolf.js&quot;&gt;&lt;/script&gt;</code></pre>
+
+<p>Wherewolf is also available as a Node module, installed via npm. [ALMOST]</p>
+
+<h1>API</h1>
+
+<p>To summon a Wherewolf, call the <code>Wherewolf</code> constructor:</p>
+
+<pre><code>//The full moon is out
+var teenWolf = new Wherewolf();</code></pre>
+
+<h2>Wherewolf.add(layerName,features[,objectName])</h2>
+
+<pre><code>//Add one layer
+teenWolf.add(&quot;US State&quot;,states)
+
+//Add multiple layers
+teenWolf.add(&quot;US State&quot;,states)
+        .add(&quot;County&quot;,counties);</code></pre>
+
+<p>Adds a new layer of GeoJSON or TopoJSON features with the name <code>layerName</code> to a Wherewolf.</p>
+
+<p><code>features</code> can be any one of:
+<em> A GeoJSON <code>FeatureCollection</code>
+</em> An array of GeoJSON features
+<em> A single GeoJSON feature
+</em> A TopoJSON <code>Topology</code></p>
+
+<p>If <code>features</code> is a TopoJSON topology with multiple objects (e.g. you have a TopoJSON file with counties and states in the same file), you must specify which <code>objectName</code> to add.</p>
+
+<pre><code>teenWolf.add(&quot;US County&quot;,statesAndCounties,&quot;counties&quot;);</code></pre>
+
+<p><strong>Returns:</strong> the updated Wherewolf.</p>
+
+<h2>Wherewolf.addAll(topology)</h2>
+
+<pre><code>teenWolf.addAll(statesAndCounties);</code></pre>
+
+<p>Adds each TopoJSON object in <code>topology</code> as a layer to the Wherewolf. Each object&#39;s name is used as its layer name.  The above example is equivalent to:</p>
+
+<pre><code>for (var name in statesAndCounties.objects) {
+  teenWolf.add(name,statesAndCounties,name);
+}</code></pre>
+
+<p><strong>Returns:</strong> the updated Wherewolf.</p>
+
+<h2>Wherewolf.find(point[,options])</h2>
+
+<pre><code>var results = teenWolf.find([-75.15,30.2]);</code></pre>
+
+<p>Returns an object with the properties of the matching feature from each Wherewolf layer that the <code>point</code> is found in.  For any layer where the point has no match, the result will be <code>null</code>.</p>
+
+<p><code>point</code> can be either an array of <code>[lng,lat]</code> (LONGITUDE FIRST), or a literal:</p>
+
+<pre><code>var results = teenWolf.find({ lat: 30.2, lng: -75.15 });</code></pre>
+
+<p><code>options</code> is an object with two possible options: <code>layer</code> and <code>wholeFeature</code>.</p>
+
+<p>Setting <code>layer</code> to a layer name will get the result for that layer only (default: all layers).</p>
+
+<pre><code>var results = teenWolf.find(point, { layer: &quot;US State&quot; });</code></pre>
+
+<p>Setting <code>wholeFeature</code> will return the whole matching feature as GeoJSON, rather than just its properties.</p>
+
+<pre><code>var results = teenWolf.find(point, { wholeFeature: true });</code></pre>
+
+<p>To see the difference between various options, check out the <a href="http://veltman.github.io/wherewolf/examples/options/">Wherewolf options playground</a>.</p>
+
+<p><strong>Returns:</strong> the Wherewolf&#39;s search results.</p>
+
+<h2>Wherewolf.get(layerName)</h2>
+
+<pre><code>var states = teenWolf.get(&quot;US State&quot;);</code></pre>
+
+<p>Returns an array of GeoJSON features saved as layer <code>layerName</code>.  If <code>layerName</code> does not exist, returns <code>null</code>.  The above example would return:</p>
+
+<pre><code>[
+  {
+    type: &quot;Feature&quot;,
+    properties: { name: &quot;California&quot; },
+    geometry: ...
+  },
+  {
+    type: &quot;Feature&quot;,
+    properties: { name: &quot;Arizona&quot; },
+    geometry: ...
+  },
+  ...
+]</code></pre>
+
+<p><strong>Returns:</strong> an array of GeoJSON features, or <code>null</code>.</p>
+
+<h2>Wherewolf.remove(layerName)</h2>
+
+<pre><code>teenWolf.remove(&quot;County&quot;);</code></pre>
+
+<p>Remove the layer with name <code>layerName</code> if it exists.</p>
+
+<p><strong>Returns:</strong> the updated Wherewolf object.</p>
+
+<h2>Wherewolf.layerNames()</h2>
+
+<pre><code>var names = teenWolf.layerNames();
+//[&quot;US State&quot;,&quot;County&quot;]</code></pre>
+
+<p>Get the names of all existing layers in a Wherewolf.</p>
+
+<p><strong>Returns:</strong> an array of current layer names.</p>
+
+<h1>Examples</h1>
+
+<ul><li><a href="http://bl.ocks.org/veltman/7a2b34639e6a3402aaaf">Basic demo</a></li><li><a href="http://veltman.github.io/wherewolf/examples/options/">Using .find() options</a></li><li><a href="http://bl.ocks.org/veltman/238195622cce0d9d2946">Geocode an address</a></li><li><a href="http://bl.ocks.org/veltman/b4b981fb85829937fc7c">A New York boundary service</a></li><li><a href="http://veltman.github.io/wherewolf/examples/node/classify-points.js">Node module: add attributes to a CSV</a></li></ul>
+
+<h1>Performance</h1>
+
+<p>As a stress test of performance, we tried adding all 3141 counties in the United States as a Wherewolf layer and then searching it for 5000 random nearby points.  In most instances, finding the containing feature for a point took less than a tenth of a millisecond.  In the worst case, it took about 8 milliseconds.</p>
+
+<ul><li><strong>Chrome 38 (OS X, Macbook Pro):</strong> 53ms to summon, 0.08ms to search each point</li><li><strong>Safari 7.0.2 (OS X, Macbook Pro):</strong> 11ms to summon, 0.07ms to search each point</li><li><strong>Firefox 33 (OS X, Macbook Pro):</strong> 23ms to summon, 0.07ms to search each point</li><li><strong>Chrome 34 (Android 4.4.4, Nexus 5):</strong> 53ms to summon, 0.72ms to search each point</li><li><strong>IE9 (Windows 7):</strong> 32ms to summon, 0.62ms to search each point</li><li><strong>IE10 (Windows 7):</strong> 20ms to summon, 0.54ms to search each point</li><li><strong>Firefox 29 (Android 2.3.4):</strong> 267ms to summon, 8.2ms to search each point</li><li><strong>Mobile Safari (iOS 7, iPhone 5C):</strong> 48ms to summon, 1.1ms to search each point</li><li><strong>Chrome 38 (iOS 7, iPad Mini):</strong> 53ms to summon, 1.74ms to search each point</li></ul>
+
+<p>The main performance limitation when using Wherewolf is the size of the GeoJSON or TopoJSON files you have to load in before you can search.  But you can get these files pretty small by a) converting to TopoJSON, b) removing extraneous attribute info, and c) gzipping.  Even the file of all the counties in the US is only 78k as gzipped TopoJSON, which will download in about 1.8 seconds on a 3G connection, or 73 milliseconds on a 30mbps Wifi connection.</p>
+
+<p>If you have concerns about initial load time due to file size, a fancy approach would to be divide the features into subsets and only initially load a GeoJSON file with the bounding box for each subset.  For example, you could have:</p>
+
+<ul><li><code>quadrants.topojson</code></li><li><code>northwest-us.topojson</code></li><li><code>southwest-us.topojson</code></li><li><code>northeast-us.topojson</code></li><li><code>southeast-us.topojson</code></li></ul>
+
+<p>Then you could do something like:</p>
+
+<pre><code>ww.add(&quot;quadrant&quot;,quadrants);
+
+//When you need to search...
+var quadrant = ww.find([lng,lat],{layer:&quot;quadrant&quot;});
+
+//If they are in one of the four rectangles,
+//Load that file and search it
+//You&#39;re only loading/search 25% of the counties
+if (quadrant.name) {
+  $.getJSON(quadrant.name+&quot;.topojson&quot;,function(counties){
+    ww.add(&quot;counties&quot;,counties);
+    var theCountyTheyAreIn = ww.find([lng,lat],{layer:&quot;counties&quot;});
+  });
+}</code></pre>
+
+<p>In this way, you load very little data up front, but the downside is you introduce some extra delay at the time of the search.</p>
+
+<h1>Fine print</h1>
+
+<ul><li>This will probably not work for a feature that crosses the North or South Pole.</li><li>This may not work for certain special cases of a point that lies right on the antimeridian being checked against a feature that crosses the antimeridian. It&#39;s unclear whether any scenario on the actual earth can cause this problem.  The Aleutian Islands work fine.</li><li>Wherewolf will only match against GeoJSON <code>Polygons</code>,<code>MultiPolygons</code>,and <code>Points</code>.  It will not work with a feature that&#39;s a <code>LineString</code>.</li><li>If your geographic data file is invalid, you may get unpredictable results.  Wherewolf assumes that your polygons do not self-intersect or overlap.  If a point matches more than one feature in one layer, Wherewolf will return the first match it finds.</li><li>Your results will only be as accurate as your data is precise.  If the boundaries you&#39;re using are highly simplified, you may get inaccurate results for points near a border. </li></ul>
+
+<h1>Credits/License</h1>
+
+<p>By <a href="https://twitter.com/veltman">Noah Veltman</a> and <a href="https://twitter.com/thepapaya">Jenny Ye</a></p>
+
+<p>Special thanks to:</p>
+
+<ul><li><a href="http://www.wnyc.org/">WNYC</a></li><li><a href="http://opennews.org">OpenNews</a> - this was released as part of the November 2014 OpenNews Code Convening</li><li><a href="https://github.com/substack">Substack</a> for his <a href="https://github.com/substack/point-in-polygon">point-in-polygon module</a></li><li><a href="https://github.com/mbostock">Mike Bostock</a> for <a href="https://github.com/mbostock/topojson">TopoJSON</a></li><li><a href="https://twitter.com/hellolouise">Louise Ma</a> for the logo</li></ul>
+
+<p>Available under the MIT license.</p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</p>
+  </body>
+</html>
