@@ -1,18 +1,7 @@
 Wherewolf
 =========
 
-Wherewolf is a server-less boundary service.  Given a set of geographic features and a point, it will tell you which feature that point lies in.
-
-    var teenWolf = Wherewolf();
-    teenWolf.add("Flood Zone",floodZones);
-
-    var result = teenWolf.find({lat: 40, lng: -70});
-    console.log(result["Flood Zone"]);
-    //{zone: "A"}
-
-as a lightweight alternative to something like [django-boundaryservice](https://github.com/newsapps/django-boundaryservice).
-
-Find what geographic feature (e.g. an election district) a given point lies in.
+A server-less boundary service. Find what geographic feature (e.g. an election district) a given point lies in.
 
 [Very brief example code]
 
@@ -34,107 +23,100 @@ If you're using it in the browser, and your data is TopoJSON, include the topojs
 
 # API
 
-To summon a Wherewolf, call the `Wherewolf` constructor:
+## Wherewolf.add(layerName,features[,key])
 
-    var teenWolf = new Wherewolf();
+Adds a set of features (GeoJSON or TopoJSON) as a layer name layerName to a Wherewolf. If features is a topology, all objects are added with their object key as the layer name unless a key is provided for a specific object to be added.
 
-## Wherewolf.add(layerName,features[,objectName])
-
-    //Add one layer
-    teenWolf.add("US State",states)
-
-    //Add multiple layers
-    teenWolf.add("US State",states)
-            .add("County",counties);
-
-Adds a new layer of GeoJSON or TopoJSON features with the name `layerName` to a Wherewolf.
-
-`features` can be any one of:
-* A GeoJSON `FeatureCollection`
-* An array of GeoJSON features
-* A single GeoJSON feature
-* A TopoJSON `Topology`
-
-If `features` is a TopoJSON topology with multiple objects (e.g. you have a TopoJSON file with counties and states in the same file), you must specify which `objectName` to add.
-
-    teenWolf.add("US County",statesAndCounties,"counties");
-
-**Returns:** the updated Wherewolf.
+Returns the updated Wherewolf.
 
 ## Wherewolf.addAll(topology)
 
-    teenWolf.addAll(statesAndCounties);
+Adds each object in a topology as a layer to the Wherewolf. The object key is used as the layer name.
 
-Adds each TopoJSON object in `topology` as a layer to the Wherewolf. Each object's name is used as its layer name.  The above example is equivalent to:
-
-    for (var name in statesAndCounties.objects) {
-      teenWolf.add(name,statesAndCounties,name);
-    }
-
-**Returns:** the updated Wherewolf.
+Returns the updated Wherewolf.
 
 ## Wherewolf.find(point[,options])
 
-    teenWolf.find([-75.15,30.2]);
+Returns an array with the properties of the feature in each layer that the point is found in.
 
-Returns an object with the properties of the matching feature from each Wherewolf layer that the `point` is found in.  For any layer where the point has no match, the result will be `null`.
+Possible options are:
+    'layer': get one specific layer name (default: all layers)
+    'wholeFeature': return the feature itself (default: just its properties)
 
-`point` can be either an array of `[lng,lat]` (LONGITUDE FIRST), or a literal:
 
-    teenWolf.find({ lat: 30.2, lng: -75.15 });
+Example: 
+If Wherewolf ww has layers ["State Senate", "State Assembly", "Borough (NYC)"], and point is in Queens,
+    ww.find(point,{layer: "Borough (NYC"}) will return
+    {name: 'Queens'}
 
-`options` is an object with two possible options: `layer` and `wholeFeature`.
+    ww.find(point,{layer: "Borough (NYC)", wholeFeature: true) will return
+    { type: 'Feature',
+  properties: { name: 'Queens' },
+  geometry: { type: 'Polygon', coordinates: [ [Object] ] },
+  bbox: 
+   [ [ -74.03902792005192, 40.53463332746448 ],
+     [ -73.70000544788745, 40.811711305254065 ] ] }
 
-Setting `layer` to a layer name will get the result for that layer only (default: all layers).
+    ww.find(point, {wholeFeature: true}) will return
+    { 'State Senate': 
+   { type: 'Feature',
+     id: 15,
+     properties: { name: 'SS16' },
+     geometry: { type: 'Polygon', coordinates: [Object] },
+     bbox: [ [Object], [Object] ] },
+  'State Assembly': 
+   { type: 'Feature',
+     id: 39,
+     properties: { name: 'AD40' },
+     geometry: { type: 'Polygon', coordinates: [Object] },
+     bbox: [ [Object], [Object] ] },
+  'Borough (NYC)': 
+   { type: 'Feature',
+     properties: { name: 'Queens' },
+     geometry: { type: 'Polygon', coordinates: [Object] },
+     bbox: [ [Object], [Object] ] }}
 
-    teenWolf.find(point, { layer: "US State" });
-
-Setting `wholeFeature` will return the whole matching feature as GeoJSON, rather than just its properties.
-
-    teenWolf.find(point, { wholeFeature: true });
-
-To see the difference between various options, check out the [Wherewolf options playground](FIX).
-
-**Returns:** the Wherewolf's search results.
 
 ## Wherewolf.get(layerName)
+Returns the features of the layer named layerName, returns null if layerName not found.
 
-    teenWolf.get("US State");
+Example: If a Wherewolf ww has layers ["State Senate", "State Assembly", "Borough (NYC)"] and we call ww.get("Borough (NYC)"), we would get:
 
-Returns an array of GeoJSON features saved as layer `layerName`.  If `layerName` does not exist, returns `null`.  The above example would return:
+[ { type: 'Feature',
+    properties: { name: 'Staten Island' },
+    geometry: { type: 'Polygon', coordinates: [Object] },
+    bbox: [ [Object], [Object] ] },
+  { type: 'Feature',
+    properties: { name: 'Manhattan' },
+    geometry: { type: 'MultiPolygon', coordinates: [Object] },
+    bbox: [ [Object], [Object] ] },
+  { type: 'Feature',
+    properties: { name: 'Bronx' },
+    geometry: { type: 'Polygon', coordinates: [Object] },
+    bbox: [ [Object], [Object] ] },
+  { type: 'Feature',
+    properties: { name: 'Brooklyn' },
+    geometry: { type: 'Polygon', coordinates: [Object] },
+    bbox: [ [Object], [Object] ] },
+  { type: 'Feature',
+    properties: { name: 'Queens' },
+    geometry: { type: 'Polygon', coordinates: [Object] },
+    bbox: [ [Object], [Object] ] } ]
 
-    [
-      {
-        type: "Feature",
-        properties: { name: "California" },
-        geometry: ...
-      },
-      {
-        type: "Feature",
-        properties: { name: "Arizona" },
-        geometry: ...
-      },
-      ...
-    ]
 
-**Returns:** an array of GeoJSON features, or `null`.
+If we call ww.get("Neighborhoods"), we would get null because w has no layer named "Neighbohoods".
 
 ## Wherewolf.remove(layerName)
 
-    teenWolf.remove("County");
+Removes layer with name layerName if it exists, returns array of remaining layer names.
 
-Remove the layer with name `layerName` if it exists.
-
-**Returns:** the updated Wherewolf object.
+Example: If a Wherewolf ww has layers ["State Senate", "State Assembly", "Borough (NYC)"], and we call ww.remove("State Senate"), we will get back ww which now has layers ["State Assembly", "Borough (NYC)"]. 
 
 ## Wherewolf.layerNames()
 
-    teenWolf.layerNames();
-    //["US State","County"]
+Returns an array of current layer names.
 
-Get the names of all existing layers in a Wherewolf.
-
-**Returns:** an array of current layer names.
+Example: ["State Senate", "State Assembly", "Borough (NYC)"]
 
 =======
 # Examples
@@ -163,20 +145,12 @@ As a stress test of performance, we tried adding all 3141 counties in the United
 
 The main performance limitation when using Wherewolf is the size of the GeoJSON or TopoJSON files you have to load in before you can search.  But you can get these files pretty small by a) converting to TopoJSON, b) removing extraneous attribute info, and c) gzipping.  Even the file of all the counties in the US is only 78k as gzipped TopoJSON, which will download in about 1.8 seconds on a 3G connection, or 73 milliseconds on a 30mbps Wifi connection.
 
-If you have concerns about initial load time due to file size, a fancy approach would to be divide the features into subsets and only initially load a GeoJSON file with the bounding box for each subset.  For example, you could have:
+If you have concerns about initial load time due to file size, a fancy approach would to be divide the features into subsets and only initially load a GeoJSON file with the bounding box for each subset.  For example, you could have `northwest-us.topojson`, `southwest-us.topojson`, `northeast-us.topojson`, and `southeast-us.topojson`, and `quadrants.topojson`.  Then you could do something like:
 
-* `quadrants.topojson`
-* `northwest-us.topojson`
-* `southwest-us.topojson`
-* `northeast-us.topojson`
-* `southeast-us.topojson`
-
-Then you could do something like:
-
-    ww.add("quadrant",quadrants);
+    ww.add("quadrants",quadrants);
 
     //When you need to search...
-    var quadrant = ww.find([lng,lat],{layer:"quadrant"});
+    var quadrant = ww.find([lng,lat],{layer:"quadrants"});
 
     //If they are in one of the four rectangles,
     //Load that file and search it
@@ -188,14 +162,13 @@ Then you could do something like:
       });
     }
 
-In this way, you load very little data up front, but the downside is you introduce some extra delay at the time of the search.
+In this way, you load very little data up front, but the downside is you introduce a bit of extra delay when they search.
 
 # Fine print
 
 * This will probably not work for a feature that crosses the North or South Pole.
-* This may not work for certain special cases of a point that lies right on the antimeridian being checked against a feature that crosses the antimeridian. It's unclear whether any scenario on the actual earth can cause this problem.  Don't worry, the Aleutian Islands work fine.
-* Wherewolf will only match against GeoJSON `Polygons`,`MultiPolygons`,and `Points`.  It will not work with a feature that's a `LineString`.
-* If your geographic data file is invalid, you may get unpredictable results.  Wherewolf assumes that your polygons do not self-intersect or overlap.  If a point matches more than one feature in one layer, Wherewolf will return the first match it finds.
+* This may not work for a very special case of a point that lies right on the antimeridian being checked against a feature that crosses the antimeridian. It's unclear whether any scenario on the actual earth can cause this problem.  Don't worry, the Aleutian Islands work fine.
+* [Geo data precision]
 
 # Credits/License
 
