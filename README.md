@@ -3,6 +3,20 @@ Wherewolf
 
 A server-less boundary service. Find what geographic feature (e.g. an election district) a given point lies in.
 
+# API
+
+## Wherewolf.add(layerName,features[,key])
+
+## Wherewolf.addAll(topology)
+
+## Wherewolf.find(point[,options])
+
+## Wherewolf.get(layerName)
+
+## Wherewolf.remove(layerName)
+
+## Wherewolf.layerNames()
+
 # Performance
 
 As a stress test of performance, we tried adding all 3141 counties in the United States as a Wherewolf layer and then searching it for 5000 random nearby points.  In most instances, finding the containing feature for a point took less than a tenth of a millisecond.  In the worst case, it took about 8 milliseconds.
@@ -42,6 +56,7 @@ In this way, you load very little data up front, but the downside is you introdu
 
 * This will probably not work for a feature that crosses the North or South Pole.
 * This may not work for a very special case of a point that lies right on the antimeridian being checked against a feature that crosses the antimeridian. It's unclear whether any scenario on the actual earth can cause this problem.  Don't worry, the Aleutian Islands work fine.
+* [Geo data precision]
 
 # Credits/License
 
