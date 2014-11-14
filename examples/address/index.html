@@ -3,11 +3,10 @@
 <link rel="stylesheet" href="style.css" type="text/css" />
 <body>
   <div class="container">
-    <h2>New York boundary service</h2>
-    <h3>Powered by <a href="https://github.com/veltman/wherewolf">Wherewolf</a></h3>
-    <div id="form"><form><input type="text" id="address" placeholder="Enter a New York address"/><input type="submit" value="Go!"/></form></div>
+    <h2>Find your 113th Congressional District</h2>
+    <div id="form"><form><input type="text" id="address" placeholder="Enter your address"/><input type="submit" value="Go!"/></form></div>
     <div id="map"></div>
-    <div id="results"></div>
+    <div id="district"></div>
   </div>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 <script src="//maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
@@ -15,21 +14,25 @@
 <script src="../../wherewolf.js"></script>
 <script>
 
-   var options = {center:{lat:40.8,lng:-73.9},zoom: 10},
+   var options = {center:{lat:39.8,lng:-98.5},zoom: 3},
        map = new google.maps.Map(document.getElementById("map"),options),
        marker = new google.maps.Marker(),
-       geocoder = new google.maps.Geocoder();
+       geocoder = new google.maps.Geocoder(),
+       mapFeature;
 
+  map.data.setStyle({
+    fillColor: "#e51133",
+    strokeColor: "#e51133"
+  });
 
   //Initialize a wherewolf
   var ww = Wherewolf();
 
   //Get the district data
-  $.getJSON("districts.json",function(data){
+  $.getJSON("congressional-districts.json",function(data){
 
-    //Use .addAll to add every
-    //TopoJSON object at once
-    ww.addAll(data);
+    //Use .add() to add congressional districts
+    ww.add("house",data);
 
     //When they submit an address...
     $("form").on("submit",function(){
@@ -37,7 +40,7 @@
       //Geocode with Google
       geocoder.geocode({ address: $("#address").val() },function(results, status) {
 
-        var districts,lngLat;
+        var houseDistrict,lngLat;
 
         //For each geocoder result
         for (var i = 0; i < results.length; i++) {
@@ -48,17 +51,23 @@
           };
 
           //Check it with wherewolf
-          districts = ww.find(lngLat);
+          //Get just the result for the "house" layer
+          //Return the whole matching feature,
+          //not just its properties
+          houseDistrict = ww.find(lngLat,{
+            layer:"house",
+            wholeFeature: true
+          });
 
           //If it's a match, stop
-          if (districts.Borough) {
-            return showResult(lngLat,districts);
+          if (houseDistrict) {
+            return showDistrict(lngLat,houseDistrict);
           }
 
         }
 
         //No results
-        return showResult(lngLat,districts);
+        return showDistrict();
 
       });
 
@@ -68,39 +77,32 @@
 
   });
 
-  function showResult(lngLat,districts) {
-
-    $("#results div").remove();
-
-    //If Google returned no results at all,
-    //Make a list of district types with null for each
-    if (!districts) {
-      districts = {};
-      ww.layerNames().forEach(function(type){
-        districts[type] = null;
-      });
-    }
-
-    //For each district type, show the result
-    //Show "Not found" if the result is null
-    for (var type in districts) {
-      var val = (districts[type] ? districts[type].name : "Not found");
-      $("#results").append("<div><strong>"+type+":</strong>"+val+"</div>");
-    }
+  function showDistrict(lngLat,district) {
 
     //Center the map on their location, or the default
     map.setCenter(lngLat || options.center);
     
     //Zoom the map in if they have a location,
-    //Otherwise zoom out to NYC
-    map.setZoom(lngLat ? 15 : options.zoom);
+    //Otherwise zoom out to US
+    map.setZoom(lngLat ? 8 : options.zoom);
 
-    //If they have a location, show a marker
-    if (lngLat) {
+    //If it's not the first search, clear any old district
+    map.data.forEach(function(f){
+      map.data.remove(f);
+    });
+
+    //If there's a match, display it
+    if (district) {
+      mapFeature = map.data.addGeoJson(district);
+      $("#district").text(district.properties.district);
       marker.setMap(map);
       marker.setPosition(lngLat);
+
+    //Otherwise clear the map and show "No district found"
     } else {
+      $("#district").text("No district found");
       marker.setMap(null);
+
     }
 
   }
