@@ -25,16 +25,36 @@ If you're using it in the browser, and your data is TopoJSON, include the topojs
 
 ## Wherewolf.add(layerName,features[,key])
 
+Adds a set of boundaries given name layerName. If key is provided
+
+Returns the updated Wherewolf.
+
 ## Wherewolf.addAll(topology)
 
 ## Wherewolf.find(point[,options])
 
 ## Wherewolf.get(layerName)
+Returns the features of the layer named layerName, returns null if layerName not found.
+
+ex: If a Wherewolf w has layers ["Senate", "Assembly", "School District"] and we call w.get("Senate"), we would get:
+
+
+If we call w.get("Neighborhoods"), we would get null because w has no layer named "Neighbohoods".
 
 ## Wherewolf.remove(layerName)
 
+Removes layer with name layerName, returns array of remaining layer names.
+
+ex: If a Wherewolf w has layers ["Senate", "Assembly", "School District"], and we call w.remove("Senate"), we will get back the Wherewolf w which now has layers ["Assembly", "School District"]. 
+
 ## Wherewolf.layerNames()
 
+
+Returns an array of current layer names.
+
+ex: ["Senate", "Assembly", "School District"]
+
+=======
 # Examples
 
 * Basic
