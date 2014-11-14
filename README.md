@@ -146,13 +146,11 @@ Get the names of all existing layers in a Wherewolf.
 =======
 # Examples
 
-* Basic
-* Multiple layers
-* Add all TopoJSON objects at once
-* Options
-* Geocode an address
-* New York boundary service
-* Use as a Node module
+* [Basic demo](http://bl.ocks.org/veltman/7a2b34639e6a3402aaaf)
+* [Configuring options](http://veltman.github.io/wherewolf/examples/options/)
+* [Geocode an address](http://bl.ocks.org/veltman/238195622cce0d9d2946)
+* [A New York boundary service](http://bl.ocks.org/veltman/b4b981fb85829937fc7c)
+* [Node module: add attributes to a CSV](http://veltman.github.io/wherewolf/examples/node/classify-points.js)
 
 # Performance
 
