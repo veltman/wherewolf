@@ -1,3 +1,5 @@
+![Wherewolf](./wherewolf-logo.png)
+
 Wherewolf
 =========
 
