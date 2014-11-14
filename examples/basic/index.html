@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+<style>
+  #map {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+</style>
+<body>
+<div id="map"></div>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="../../wherewolf.js"></script>
+<script>
+
+  var map = L.map("map").setView([51.505, -0.09], 13);
+
+  var ww = Wherewolf();
+
+  var points = [
+    [-80,35]
+  ];
+
+  $.getJSON("carlsjr_hardees.json",function(data){
+
+    ww.add("burgers",data);
+
+    points.forEach(function(point){
+
+      var result = ww.find(point);
+
+      console.log(result);
+
+    });
+
+  });
+
+</script>
