@@ -141,7 +141,6 @@ Get the names of all existing layers in a Wherewolf.
 
 **Returns:** an array of current layer names.
 
-=======
 # Examples
 
 * [Basic demo](http://bl.ocks.org/veltman/7a2b34639e6a3402aaaf)
