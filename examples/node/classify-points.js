@@ -1,6 +1,6 @@
 //Parses a CSV of points
 //and return a CSV of those points
-//With police precinct added
+//With police precinct added as a new column
 //by a single-layer Wherewolf
 
 //data from NYC Open Data Portal
@@ -12,7 +12,7 @@ var Wherewolf = require("../../wherewolf.js"),
     d3 = require("d3"),
     queue = require("queue-async")
 
-//Initialize a wherewolf
+//Summon a wherewolf
 var ww = Wherewolf();
 
 //Load GeoJSON of police precincts and

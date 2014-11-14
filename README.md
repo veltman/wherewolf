@@ -215,6 +215,7 @@ Special thanks to:
 * [OpenNews](http://opennews.org) - this was released as part of the November 2014 OpenNews Code Convening
 * [Substack](https://github.com/substack) for his [point-in-polygon module](https://github.com/substack/point-in-polygon)
 * [Mike Bostock](https://github.com/mbostock) for [TopoJSON](https://github.com/mbostock/topojson)
+* [Louise Ma](https://twitter.com/hellolouise) for the logo
 
 Available under the MIT license.
 
