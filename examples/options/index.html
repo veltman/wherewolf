@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="style.css" type="text/css" />
+<body>
+<div class="container">
+  <h2>Wherewolf <code>.find()</code> options playground</h2>
+  <div class="controls">
+    <div>
+    <code>layer:</code> 
+      <span>
+        <button class="btn btn-default active" data-key="layer" data-value="false">not set (default)</button><button class="btn btn-default" data-key="layer" data-value="assemblyDistrict">"assemblyDistrict"</button><button class="btn btn-default" data-key="layer" data-value="senateDistrict">"senateDistrict"</button>
+      </span>
+    </div>
+    <div>
+      <code>wholeFeature:</code>
+      <span>
+        <button class="btn btn-default active" data-key="wholeFeature" data-value="false">false (default)</button><button class="btn btn-default" data-key="wholeFeature" data-value="true">true</button>
+      </span>
+    </div>
+  </div>
+  <div class="caption">Code to search:</div>
+    <pre><code>//Add two layers to wherewolf
+ww.add("assemblyDistrict",assembly)
+  .add("senateDistrict",senate);
+
+//Search a point with options
+var <span class="red">result</span> = ww.find([40.7153051,-73.9981801]<span id="options"></span>);</code></pre>
+  <div class="caption">The value of <code class="red">result</code>:</div>
+    <pre><code id="result"></code></pre>
+  </div>
+</div>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script>
+
+  var options = {
+    layer: null,
+    wholeFeature: false
+  };
+
+  $.getJSON("example-results.json",function(results){
+
+    $("button").on("click",function(){
+
+      var $this = $(this);
+
+      $this.addClass("active").siblings().removeClass("active");
+
+      options[$this.data("key")] = $this.data("value");
+
+      var tempResult,
+          tempOptions = {};
+
+      if (options.layer) {
+        tempOptions.layer = options.layer;
+      }
+
+      if (options.wholeFeature) {
+        tempOptions.wholeFeature = true;
+      }
+
+      if (tempOptions.layer || tempOptions.wholeFeature) {
+        $("#options").text(","+JSON.stringify(tempOptions,null,"  "));
+      } else {
+        $("#options").text("");
+      }
+
+      if (tempOptions.wholeFeature) {
+        tempResult = results;
+      } else {
+        tempResult = {};
+
+        for (var key in results) {
+          tempResult[key] = results[key].properties;
+        }
+      }
+
+      if (tempOptions.layer) {
+        tempResult = tempResult[tempOptions.layer];
+      }
+
+      $("#result").text(JSON.stringify(tempResult,null,"  "));
+
+    });
+
+  });
+
+</script>
