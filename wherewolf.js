@@ -37,7 +37,7 @@
 
     //If it has a 'type' property
     //Check for a FeatureCollection or Topology
-    if (collection.type) {
+    if (collection && collection.type) {
 
       //Check for a FeatureCollection
       if (collection.type === "FeatureCollection") {
@@ -49,6 +49,11 @@
 
         features = _convertTopo(collection,key);
 
+
+      } else if (collection.type === "Feature") {
+
+        features = [collection];
+
       }
 
     //If it's an array
@@ -57,8 +62,10 @@
 
       features = collection;
 
+    }
+
     //Not valid
-    } else {
+    if (!features) {
 
       throw new TypeError("No valid GeoJSON or TopoJSON supplied.");
 
@@ -245,7 +252,8 @@
   //Convert a Topology object to a FeatureCollection
   function _convertTopo(collection,key) {
 
-    var features;
+    var converted,
+        features;
 
     //Check that topojson exists
     if (!tj) {
@@ -293,8 +301,14 @@
 
     }
 
-    //Get the FeatureCollection from the object named 'key'
-    var converted = tj.feature(collection,collection.objects[key]);
+    try {
+      //Get the FeatureCollection from the object named 'key'
+      converted = tj.feature(collection,collection.objects[key]);
+    } catch(e) {
+
+      throw new TypeError("Invalid TopoJSON.");
+
+    }
 
     //If it returns a single Feature, turn that into an array
     if (converted.type === "Feature") {
