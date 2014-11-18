@@ -14,11 +14,16 @@
 <script src="../../wherewolf.js"></script>
 <script>
 
-   var options = {center:{lat:39.8,lng:-98.5},zoom: 3},
-       map = new google.maps.Map(document.getElementById("map"),options),
+   var //options = {center:{lat:39.8,lng:-98.5},zoom: 5},
+       map = new google.maps.Map(document.getElementById("map"),{center:{lat:39.8,lng:-98.5}}),
        marker = new google.maps.Marker(),
        geocoder = new google.maps.Geocoder(),
        mapFeature;
+
+  map.fitBounds(new google.maps.LatLngBounds(
+    new google.maps.LatLng(24,-126),
+    new google.maps.LatLng(-65,50)
+  ));
 
   map.data.setStyle({
     fillColor: "#e51133",
