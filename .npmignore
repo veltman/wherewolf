@@ -3,3 +3,4 @@ junk/*
 examples/*
 test/*
 *.png
+.npmignore

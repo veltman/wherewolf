@@ -1,6 +1,6 @@
 {
   "name": "wherewolf",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A client-side boundary service powered by GeoJSON or TopoJSON data.  Find which feature a point lies in.",
   "main": "wherewolf.js",
   "scripts": {
