@@ -1,6 +1,6 @@
 {
   "name": "wherewolf",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A client-side boundary service powered by GeoJSON or TopoJSON data.  Find which feature a point lies in.",
   "main": "wherewolf.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "point-in-polygon",
     "boundary"
   ],
-  "author": "Noah Veltman <noah@noahveltman.com> / Jenny Ye <thepapaya@gmail.com>",
+  "author": "Noah Veltman <noah@noahveltman.com> / Jenny Ye <jye225@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/veltman/wherewolf/issues"
