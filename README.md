@@ -34,7 +34,9 @@ If you're using GeoJSON boundaries, there are no dependencies.  If you're using 
     <script src="http://d3js.org/topojson.v1.min.js"></script>
     <script src="wherewolf.js"></script>
 
-Wherewolf is also available as a Node module, installed via npm. [ALMOST]
+Wherewolf is also available as a [Node module](https://www.npmjs.org/package/wherewolf), installed via npm.
+
+    npm install wherewolf
 
 # API
 
