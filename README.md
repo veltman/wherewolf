@@ -26,35 +26,45 @@ You need a GeoJSON or TopoJSON version of your boundaries.
 
 If you're summoning a Wherewolf in a browser, include `wherewolf.js` as a normal script:
 
-    <script src="wherewolf.js"></script>
-    <script>
-      var teenWolf = Wherewolf();
-    </script>
+```js
+<script src="wherewolf.js"></script>
+<script>
+  var teenWolf = Wherewolf();
+</script>
+```
 
 If you're using GeoJSON boundaries, there are no dependencies.  If you're using TopoJSON, you must include the TopoJSON client library first:
 
-    <script src="http://d3js.org/topojson.v1.min.js"></script>
-    <script src="wherewolf.js"></script>
+```html
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="wherewolf.js"></script>
+```
 
 Wherewolf is also available as a [Node module](https://www.npmjs.org/package/wherewolf), installed via npm.
 
-    npm install wherewolf
+```
+npm install wherewolf
+```
 
 # API
 
 To summon a Wherewolf, call the `Wherewolf` constructor:
 
-    //The full moon is out
-    var teenWolf = new Wherewolf();
+```js
+//The full moon is out
+var teenWolf = new Wherewolf();
+```
 
 ## Wherewolf.add(layerName,features[,objectName])
 
-    //Add one layer
-    teenWolf.add("US State",states)
+```js
+//Add one layer
+teenWolf.add("US State",states)
 
-    //Add multiple layers
-    teenWolf.add("US State",states)
-            .add("County",counties);
+//Add multiple layers
+teenWolf.add("US State",states)
+        .add("County",counties);
+```
 
 Adds a new layer of GeoJSON or TopoJSON features with the name `layerName` to a Wherewolf.
 
@@ -66,41 +76,55 @@ Adds a new layer of GeoJSON or TopoJSON features with the name `layerName` to a 
 
 If `features` is a TopoJSON topology with multiple objects (e.g. you have a TopoJSON file with counties and states in the same file), you must specify which `objectName` to add.
 
-    teenWolf.add("US County",statesAndCounties,"counties");
+```js
+teenWolf.add("US County",statesAndCounties,"counties");
+```
 
 **Returns:** the updated Wherewolf.
 
 ## Wherewolf.addAll(topology)
 
-    teenWolf.addAll(statesAndCounties);
+```js
+teenWolf.addAll(statesAndCounties);
+```
 
 Adds each TopoJSON object in `topology` as a layer to the Wherewolf. Each object's name is used as its layer name.  The above example is equivalent to:
 
-    for (var name in statesAndCounties.objects) {
-      teenWolf.add(name,statesAndCounties,name);
-    }
+```js
+for (var name in statesAndCounties.objects) {
+  teenWolf.add(name,statesAndCounties,name);
+}
+```
 
 **Returns:** the updated Wherewolf.
 
 ## Wherewolf.find(point[,options])
 
-    var results = teenWolf.find([-75.15,30.2]);
+```js
+var results = teenWolf.find([-75.15,30.2]);
+```
 
 Returns an object with the properties of the matching feature from each Wherewolf layer that the `point` is found in.  For any layer where the point has no match, the result will be `null`.
 
 `point` can be either an array of `[lng,lat]` (LONGITUDE FIRST), or a literal:
 
-    var results = teenWolf.find({ lat: 30.2, lng: -75.15 });
+```js
+var results = teenWolf.find({ lat: 30.2, lng: -75.15 });
+```
 
 `options` is an object with two possible options: `layer` and `wholeFeature`.
 
 Setting `layer` to a layer name will get the result for that layer only (default: all layers).
 
-    var results = teenWolf.find(point, { layer: "US State" });
+```js
+var results = teenWolf.find(point, { layer: "US State" });
+```
 
 Setting `wholeFeature` will return the whole matching feature as GeoJSON, rather than just its properties.
 
-    var results = teenWolf.find(point, { wholeFeature: true });
+```js
+var results = teenWolf.find(point, { wholeFeature: true });
+```
 
 To see the difference between various options, check out the [Wherewolf options playground](http://veltman.github.io/wherewolf/examples/options/).
 
@@ -108,29 +132,35 @@ To see the difference between various options, check out the [Wherewolf options 
 
 ## Wherewolf.get(layerName)
 
-    var states = teenWolf.get("US State");
+```js
+var states = teenWolf.get("US State");
+```
 
 Returns an array of GeoJSON features saved as layer `layerName`.  If `layerName` does not exist, returns `null`.  The above example would return:
 
-    [
-      {
-        type: "Feature",
-        properties: { name: "California" },
-        geometry: ...
-      },
-      {
-        type: "Feature",
-        properties: { name: "Arizona" },
-        geometry: ...
-      },
-      ...
-    ]
+```js
+[
+  {
+    type: "Feature",
+    properties: { name: "California" },
+    geometry: ...
+  },
+  {
+    type: "Feature",
+    properties: { name: "Arizona" },
+    geometry: ...
+  },
+  ...
+]
+```
 
 **Returns:** an array of GeoJSON features, or `null`.
 
 ## Wherewolf.remove(layerName)
 
-    teenWolf.remove("County");
+```js
+teenWolf.remove("County");
+```
 
 Remove the layer with name `layerName` if it exists.
 
@@ -138,8 +168,10 @@ Remove the layer with name `layerName` if it exists.
 
 ## Wherewolf.layerNames()
 
-    var names = teenWolf.layerNames();
-    //["US State","County"]
+```js
+var names = teenWolf.layerNames();
+//["US State","County"]
+```
 
 Get the names of all existing layers in a Wherewolf.
 
@@ -179,20 +211,22 @@ If you have concerns about initial load time due to file size, a fancy approach 
 
 Then you could do something like:
 
-    ww.add("quadrant",quadrants);
+```js
+ww.add("quadrant",quadrants);
 
-    //When you need to search...
-    var quadrant = ww.find([lng,lat],{layer:"quadrant"});
+//When you need to search...
+var quadrant = ww.find([lng,lat],{layer:"quadrant"});
 
-    //If they are in one of the four rectangles,
-    //Load that file and search it
-    //You're only loading/search 25% of the counties
-    if (quadrant.name) {
-      $.getJSON(quadrant.name+".topojson",function(counties){
-        ww.add("counties",counties);
-        var theCountyTheyAreIn = ww.find([lng,lat],{layer:"counties"});
-      });
-    }
+//If they are in one of the four rectangles,
+//Load that file and search it
+//You're only loading/search 25% of the counties
+if (quadrant.name) {
+  $.getJSON(quadrant.name+".topojson",function(counties){
+    ww.add("counties",counties);
+    var theCountyTheyAreIn = ww.find([lng,lat],{layer:"counties"});
+  });
+}
+```
 
 In this way, you load very little data up front, but the downside is you introduce some extra delay at the time of the search.
 
