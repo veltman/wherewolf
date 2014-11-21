@@ -52,7 +52,7 @@ To summon a Wherewolf, call the `Wherewolf` constructor:
 
 ```js
 //The full moon is out
-var teenWolf = new Wherewolf();
+var teenWolf = Wherewolf();
 ```
 
 ## Wherewolf.add(layerName,features[,objectName])
@@ -200,6 +200,56 @@ As a stress test of performance, we tried adding all 3141 counties in the United
 * **Chrome 38 (iOS 7, iPad Mini):** 53ms to summon, 1.74ms to search each point
 
 The main performance limitation when using Wherewolf is the size of the GeoJSON or TopoJSON files you have to load in before you can search.  But you can get these files pretty small by a) converting to TopoJSON, b) removing extraneous attribute info, and c) gzipping.  Even the file of all the counties in the US is only 78k as gzipped TopoJSON, which will download in about 1.8 seconds on a 3G connection, or 73 milliseconds on a 30mbps Wifi connection.
+
+One thing to consider is that loading a data file will be asynchronous, so it won't block the rest of your page from loading.  In most cases, a user is likely to spend some time on the page before doing anything that relies on Wherewolf, so that gives you extra time.  The general pattern might look something like this:
+
+
+```js
+var pending,
+    wolf;
+
+//Load the data asynchronously
+$.getJSON("school-districts.geojson",function(data){
+
+    //Data is ready, summon the wherewolf
+    wolf = Wherewolf();
+    wolf.add("School District",data);
+
+    //If there's a pending search, do the lookup
+    if (pending) {
+        pending = false;
+        lookup(pending);
+    }
+
+});
+
+//When they try to search, if the data
+//has loaded, do the lookup.  Otherwise,
+//save the submission as pending for when
+//the data finishes
+$("#search-button").on("click",function(){
+    //add a loading state
+    $("div#search-form").addClass("loading");
+
+    //If the data's ready, do the lookup immediately;
+    if (wolf) {
+        lookup($("input#location").val());
+    //Otherwise set it aside as pending
+    } else {
+        pending = $("input#location").val();
+    }
+});
+
+function lookup(location) {
+    //Lookup the location
+    //do some stuff with the results
+
+    //Remove the loading state
+    $("div#search-form").removeClass("loading");
+}
+```
+
+## Getting fancy
 
 If you have concerns about initial load time due to file size, a fancy approach would to be divide the features into subsets and only initially load a GeoJSON file with the bounding box for each subset.  For example, you could have:
 
