@@ -5,12 +5,14 @@ Wherewolf
 
 Wherewolf is a server-less boundary service.  Given a set of geographic features and a point, it will tell you which feature that point lies in.
 
-    var teenWolf = Wherewolf();
-    teenWolf.add("Flood Zone",floodZones);
+```js
+var teenWolf = Wherewolf();
+teenWolf.add("Flood Zone",floodZones);
 
-    var result = teenWolf.find({lat: 40.7, lng: -74.1});
-    console.log(result["Flood Zone"]);
-    //{zone: "A"}
+var result = teenWolf.find({lat: 40.7, lng: -74.1});
+console.log(result["Flood Zone"]);
+//{zone: "A"}
+```
 
 We've used earlier versions of this approach for things like the [2014 Election Guide](http://project.wnyc.org/election-guide-2014/), where you enter your address to see which state assembly, state senate, and congressional district you're in, and [SchoolBook](http://data.schoolbook.org/), where we locate your school district based on your address.
 
