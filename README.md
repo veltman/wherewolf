@@ -26,7 +26,7 @@ You need a GeoJSON or TopoJSON version of your boundaries.
 
 If you're summoning a Wherewolf in a browser, include `wherewolf.js` as a normal script:
 
-```js
+```html
 <script src="wherewolf.js"></script>
 <script>
   var teenWolf = Wherewolf();
