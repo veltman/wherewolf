@@ -171,20 +171,11 @@
 
       svg.html(d3.select("#pattern").html());
 
-      var parameters = {
-        TN: {
-          scale: 5026,
-          center: [-85.9780985,35.8351170693]
-        }
-      }
-
-      //Map projection
       var projection = d3.geo.mercator()
-          .scale(parameters.TN.scale)
-          .center(parameters.TN.center) //projection center
-          .translate([width/2,height/2]); //translate to center the map in view
+          .scale(5026)
+          .center([-85.9780985,35.8351170693])
+          .translate([width/2,height/2]);
 
-      //Generate paths based on projection
       var path = d3.geo.path()
           .projection(projection);
 

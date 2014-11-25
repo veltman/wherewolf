@@ -176,20 +176,11 @@
                   .attr("viewBox","0 0 "+width+" "+height)
                   .attr("preserveAspectRatio","xMidYMid meet");
 
-      var parameters = {
-        MD: {
-          scale: 8800,
-          center: [-77.268295,38.82313944121967]
-        }
-      }
-
-      //Map projection
       var projection = d3.geo.mercator()
-          .scale(parameters.MD.scale)
-          .center(parameters.MD.center) //projection center
-          .translate([width/2,height/2]); //translate to center the map in view
+          .scale(8800)
+          .center([-77.268295,38.82313944121967])
+          .translate([width/2,height/2]);
 
-      //Generate paths based on projection
       var path = d3.geo.path()
           .projection(projection);
 
