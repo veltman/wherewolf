@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Lato:400,700,900" type="text/css">
+    <style>
+
+      body {
+        background-color: #fff;
+        color: #000;
+        padding: 0;
+        margin: 0;
+        font-size: 14px;
+        font-family: "Lato", helvetica, verdana, arial, sans-serif;
+        -moz-text-size-adjust: none;
+        -webkit-text-size-adjust: none;
+        -ms-text-size-adjust: none;
+      }
+
+      svg {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        cursor: pointer;
+      }
+
+      div.click-me {
+        position: fixed;
+        z-index: 11;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255,255,255,0.45);
+        pointer-events: none;
+      }
+
+      div.table {
+        display: table;
+        height: 100%;
+        width: 100%;
+      }
+
+      div.cell {
+        display: table-cell;
+        vertical-align: middle;
+        text-align: center;
+        font-size: 72px;
+        font-weight: bold;
+      }
+
+      circle,
+      line,
+      path,
+      text,
+      rect {
+        pointer-events: none;
+      }
+
+      text {
+        font-size: 14px;
+        fill: #444;
+      }
+
+      text.status {
+        font-size: 18px;
+        font-weight: bold;
+        text-anchor: end;
+      }
+
+      text.count {
+        text-anchor: end;
+      }
+
+      text.status.found {
+        fill: #169d8e;
+      }
+
+      g.background path {
+        stroke: #444;
+        stroke-width: 1px;
+        fill: none;
+      }
+
+      g.background.active {
+        opacity: 0.4;
+      }
+
+      g.midground path {
+        display: none;
+        stroke: none;
+        fill: url(#outside);
+      }
+
+      g.midground path.inside {
+        fill: #169d8e;
+      }
+
+      g.midground path.shown {
+        display: block;
+      }
+
+      g.ray circle,
+      g.ray path {
+        fill: #fc0;
+        stroke: none;
+      }
+
+      g.ray line {
+        stroke: #fc0;
+        stroke-width: 1.5px;
+      }
+
+      g.arc-set {
+        opacity: 0;
+      }
+
+      g.arc-set path {
+        stroke-width: 2px;
+        stroke: #da1c5c;
+        fill: none;
+        stroke-linecap: round;
+      }
+
+      g.arc-set circle {
+        display: none;
+      }
+
+      g.arc-set.intersects path {
+        stroke: #169d8e;
+      }
+
+      g.arc-set.intersects circle {
+        display: block;
+        stroke: none;
+        fill: #fc0;
+      }
+
+      g.arc-set.shown path {
+        stroke: #666;
+      }
+    </style>
+    <title>PIP Demo</title>
+  </head>
+  <body>
+    <div class="click-me"><div class="table"><div class="cell">Loading...</div></div></div>
+    <script id="pattern" type="text/html">
+      <pattern id="outside" patternUnits="userSpaceOnUse" width="4" height="4">
+        <path d="M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2" stroke-opacity="0.5" stroke="#da1c5c" stroke-width=2 />
+      </pattern>
+    </script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+    <script>
+      var width = 800,
+          height = 300,
+          clickMe = d3.select("div.click-me"),
+          pending = false,
+          svg = d3.select("body")
+                  .append("svg")
+                  .attr("viewBox","0 0 "+width+" "+height)
+                  .attr("preserveAspectRatio","xMidYMid meet");
+
+      svg.html(d3.select("#pattern").html());
+
+      var parameters = {
+        TN: {
+          scale: 5026,
+          center: [-85.9780985,35.8351170693]
+        }
+      }
+
+      //Map projection
+      var projection = d3.geo.mercator()
+          .scale(parameters.TN.scale)
+          .center(parameters.TN.center) //projection center
+          .translate([width/2,height/2]); //translate to center the map in view
+
+      //Generate paths based on projection
+      var path = d3.geo.path()
+          .projection(projection);
+
+      d3.json("../tennessee.topo.json",function(err,data){
+
+        var features = topojson.feature(data,data.objects.tennessee).features;
+
+        var background = svg.append("g").attr("class","background");
+
+        background.append("path")
+          .attr("d",path(topojson.mesh(data,data.objects.tennessee)));
+
+        var midground = svg.append("g").attr("class","midground");
+
+        var ray = svg.append("g").attr("class","ray");
+
+        ray.append("line");
+
+        ray.append("g")
+           .attr("transform","translate("+width+")")
+           .append("path")
+             .attr("d","M0,0L-10,-5L-10,5Z")
+             .attr("transform","translate(0 -20)");
+
+        ray.append("circle")
+           .attr("r",6)
+           .attr("cx",-9999);
+
+        var foreground = svg.append("g").attr("class","foreground");
+
+        var info = svg.append("g"),
+            lat = info.append("text").attr("x",24).attr("y",38),
+            lng = info.append("text").attr("x",24).attr("y",55),
+            count = info.append("text").attr("x",width-24).attr("y",55).attr("class","count"),
+            status = info.append("text").attr("x",width-24).attr("y",38).attr("class","status");
+
+        features = features.map(function(d){
+
+          var arcs = [];
+
+          var bbox = path.bounds(d);
+
+          d.geometry.coordinates[0].forEach(function(point,i){
+            if (i) {
+              arcs.push([d.geometry.coordinates[0][i-1],point]);
+            }
+          });
+
+          var outer = foreground.append("g").attr("class","TN-"+d.properties.CD);
+
+          var selection = outer.selectAll("g")
+              .data(arcs)
+              .enter()
+              .append("g")
+                .attr("class","arc-set");
+
+          selection.append("path")
+            .attr("d",function(d){
+              return path({
+                "type": "LineString",
+                "coordinates": d
+              });
+            });
+
+          return {
+            "district": d.properties.CD,
+            "numArcs": arcs.length,
+            "outer": outer,
+            "interior": midground.append("path").attr("d",path(d)),
+            "selection": selection
+          };
+
+        });
+
+        clickMe.on("click",function(){
+          d3.select(this).remove();
+        });
+
+        svg.on("click",function(){
+
+          clickMe.remove();
+
+          if (pending) {
+            return true;
+          }
+
+          pending = true;
+
+          var xy = d3.mouse(this);
+          var lnglat = projection.invert(xy);
+
+          lat.text("Latitude: "+rounded(lnglat[1]));
+          lng.text("Longitude: "+rounded(lnglat[0]));
+
+          //Update circle and arrow
+          ray.select("circle")
+             .attr("cx",xy[0])
+             .attr("cy",xy[1]);
+
+          ray.select("path")
+             .attr("transform","translate(0 "+xy[1]+")");
+
+          ray.select("line").attr("x1",xy[0])
+             .attr("x2",width-5)
+             .attr("y1",xy[1])
+             .attr("y2",xy[1]);
+
+          //Reset
+          midground.selectAll("path").attr("class",null);
+          background.classed("active",true);
+          status.classed("found",false);
+          count.text("0 intersections");
+          d3.selectAll("g.arc-set").style("opacity",0)
+            .selectAll("path,circle").style({
+              "stroke": null,
+              "fill": null
+            });
+
+          features.forEach(function(feature){
+
+            feature.numIntersections = 0;
+
+            feature.selection.selectAll("circle").remove();
+
+            feature.selection.classed("intersects",function(d){
+              return intersect(lnglat,d[0],d[1]);
+            });
+
+            feature.selection.filter(function(d){
+              return intersect(lnglat,d[0],d[1]);
+            }).append("circle")
+              .attr("cx",function(d){
+                feature.numIntersections++;
+                return yIntersection(projection(d[0]),projection(d[1]),xy[1])[0];
+              })
+              .attr("cy",function(d){
+                return yIntersection(projection(d[0]),projection(d[1]),xy[1])[1];
+              })
+              .attr("r",3);
+
+          });
+
+          var featuresToCheck = shuffle(features.slice(0));
+
+          function checkFeature(feature) {
+
+            status.text("Checking TN-"+feature.district+"...");
+
+            feature.outer.each(function(){
+              this.parentNode.appendChild(this);
+            });
+
+            var numIntersections = 0;
+            count.text("0 intersections");
+
+            feature.selection.transition()
+              .delay(function(d,i){
+                return Math.max(0,(i-1)*16)
+              })
+              .style("opacity",1)
+              .each("end",function(d,i){
+                var g = d3.select(this);
+
+                if (g.classed("intersects")) {
+                  numIntersections++;
+                  count.text(numIntersections+" intersection"+(numIntersections !== 1 ? "s" : ""));
+                }
+
+                g.select("path").transition()
+                  .duration(100)
+                  .style("stroke","#666");
+
+                if (i === feature.numArcs-1) {
+
+                  feature.interior.classed("shown",true);
+
+                  if (feature.numIntersections % 2) {
+                    feature.interior.classed("inside",true);
+                    end(feature.district);
+                  } else {
+                    feature.selection.select("circle").style("fill","#ccc")
+                      .attr("r",2);
+                    if (featuresToCheck.length && feature.numIntersections % 2 === 0) {
+                      checkFeature(featuresToCheck.pop());
+                    } else {
+                      end();
+                    }
+                  }
+
+                }
+
+              });
+
+          }
+
+          function end(district) {
+            if (district) {
+              status.text("In TN-"+district);
+            } else {
+              status.text("No matching district");
+            }
+
+            pending = false;
+          }
+
+          checkFeature(featuresToCheck.pop());
+
+        });
+
+        clickMe.select("div.cell").text("CLICK ME");
+
+      });
+
+      function rounded(num) {
+        return Math.round(num*100000)/100000;
+      }
+
+      function yIntersection(p0,p1,y) {
+
+        //Crude y-intersection for display purposes
+        //Prevent divide by zero
+        if (p0[1] === p1[1]) {
+          return [(p0[0]+p1[0])/2,p[0][1]]
+        }
+
+        if (p0[0] === p1[0]) {
+          return [p0[0],y];
+        }
+
+        var m = (p0[1]-p1[1])/(p0[0]-p1[0]),
+            b = p1[1]-(m*p1[0]);
+
+        return [(y-b)/m,y];
+
+      }
+
+      function intersect(point,a,b) {
+
+        var x = point[0], y = point[1];
+        var xi = a[0], yi = a[1];
+        var xj = b[0], yj = b[1];
+
+        return ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+
+      }
+
+      function shuffle(array) {
+        var m = array.length, t, i;
+
+        // While there remain elements to shuffle…
+        while (m) {
+
+          // Pick a remaining element…
+          i = Math.floor(Math.random() * m--);
+
+          // And swap it with the current element.
+          t = array[m];
+          array[m] = array[i];
+          array[i] = t;
+        }
+
+        return array;
+      }
+
+    </script>
+  </body>
+</html>
