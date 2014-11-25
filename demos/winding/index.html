@@ -212,7 +212,7 @@
             foreground = svg.append("g").attr("class","foreground"),
             clicked = foreground.append("circle").attr("r",8).attr("cx",-9999).attr("cy",-9999),
             line = foreground.append("line"),
-            arrowhead = foreground.append("g").attr("class","arrowhead").attr("transform","translate("+width+")").append("path").attr("d","M0,0L-10,-5L-10,5Z").attr("transform","translate(0 -20)"),
+            arrowhead = foreground.append("g").attr("class","arrowhead").attr("transform","translate("+width+")").append("path").attr("d","M0,0L-10,-5L-10,5Z").attr("transform","translate(0 -9999)"),
             sticky = svg.append("g").attr("class","sticky"),
             totalLength = background.select("path").node().getTotalLength();
 
