@@ -16,5 +16,8 @@
     "geojson",
     "point-in-polygon",
     "boundary"
-  ]
+  ],
+  "dependencies": {
+    "topojson": "~1.6.18"
+  }
 }
