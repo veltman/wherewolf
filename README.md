@@ -40,10 +40,16 @@ If you're using GeoJSON boundaries, there are no dependencies.  If you're using 
 <script src="wherewolf.js"></script>
 ```
 
-Wherewolf is also available as a [Node module](https://www.npmjs.org/package/wherewolf), installed via npm.
+Wherewolf is available as a [Node module](https://www.npmjs.org/package/wherewolf), installed via npm.
 
 ```
 npm install wherewolf
+```
+
+Wherewolf can also be installed with [Bower](http://bower.io).
+
+```
+bower install --save wherewolf
 ```
 
 # API
@@ -286,7 +292,7 @@ In this way, you load very little data up front, but the downside is you introdu
 * This may not work for certain special cases of a point that lies right on the antimeridian being checked against a feature that crosses the antimeridian. It's unclear whether any scenario on the actual earth can cause this problem.  The Aleutian Islands work fine.
 * Wherewolf will only match against GeoJSON `Polygons`,`MultiPolygons`,and `Points`.  It will not work with a feature that's a `LineString`.
 * If your geographic data file is invalid, you may get unpredictable results.  Wherewolf assumes that your polygons do not self-intersect or overlap.  If a point matches more than one feature in one layer, Wherewolf will return the first match it finds.
-* Your results will only be as accurate as your data is precise.  If the boundaries you're using are highly simplified, you may get inaccurate results for points near a border. 
+* Your results will only be as accurate as your data is precise.  If the boundaries you're using are highly simplified, you may get inaccurate results for points near a border.
 
 # Credits/License
 

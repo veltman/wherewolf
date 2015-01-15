@@ -1,0 +1,23 @@
+{
+  "name": "wherewolf",
+  "version": "1.0.2",
+  "main": "wherewolf.js",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "examples",
+    "junk",
+    "test",
+    "*.png",
+    "package.json"
+  ],
+  "keywords": [
+    "javascript",
+    "geojson",
+    "point-in-polygon",
+    "boundary"
+  ],
+  "dependencies": {
+    "topojson": "~1.6.18"
+  }
+}
