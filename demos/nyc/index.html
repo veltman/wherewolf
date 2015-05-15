@@ -157,6 +157,7 @@
         <path d="M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2" stroke-opacity="0.5" stroke="#da1c5c" stroke-width=2 />
       </pattern>
     </script>
+    <script src="../URI.min.js"></script>
     <script src="../d3.v3.min.js"></script>
     <script src="../topojson.v1.min.js"></script>
     <script>
@@ -271,7 +272,22 @@
           d3.select(this).remove();
         });
 
-        svg.on("click",function(){
+        if (navigator && navigator.geolocation && "location" in (new URI()).search(true)) {
+          navigator.geolocation.getCurrentPosition(
+            function(loc){
+              clickedFn(projection([loc.coords.longitude,loc.coords.latitude]));
+            },
+            function(){},
+            {
+              enableHighAccuracy: true
+            }
+          );
+        }
+
+        var clickedFn = function(loc){
+
+          var xy,
+              lnglat;
 
           clickMe.remove();
 
@@ -281,8 +297,17 @@
 
           pending = true;
 
-          var xy = d3.mouse(this);
-          var lnglat = projection.invert(xy);
+          if (loc && loc.length) {
+
+            xy = loc;
+
+          } else {
+
+            xy = d3.mouse(this);
+
+          }
+
+          lnglat = projection.invert(xy);
 
           lat.text("Latitude: "+rounded(lnglat[1]));
           lng.text("Longitude: "+rounded(lnglat[0]));
@@ -337,15 +362,9 @@
 
           var order = getOrder();
 
-          console.log(order);
-
           var featuresToCheck = features.slice(0).sort(function(a,b){
             return order.indexOf(a.district) - order.indexOf(b.district);
           });
-
-          console.log(featuresToCheck.map(function(f){
-            return f.district;
-          }));
 
           function checkFeature(feature) {
 
@@ -360,7 +379,7 @@
 
             feature.selection.transition()
               .delay(function(d,i){
-                return Math.max(0,(i-1)*16)
+                return Math.max(0,(i-1)*12)
               })
               .style("opacity",1)
               .each("end",function(d,i){
@@ -411,7 +430,9 @@
 
           checkFeature(featuresToCheck.pop());
 
-        });
+        }
+
+        svg.on("click",clickedFn);
 
         clickMe.select("div.cell").text("CLICK ME");
 
