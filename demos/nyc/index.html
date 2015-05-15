@@ -73,11 +73,11 @@
       text.status {
         font-size: 18px;
         font-weight: bold;
-        text-anchor: end;
+        text-anchor: start;
       }
 
       text.count {
-        text-anchor: end;
+        text-anchor: start;
       }
 
       text.status.found {
@@ -160,8 +160,8 @@
     <script src="../d3.v3.min.js"></script>
     <script src="../topojson.v1.min.js"></script>
     <script>
-      var width = 800,
-          height = 300,
+      var width = 600,
+          height = 600,
           clickMe = d3.select("div.click-me"),
           pending = false,
           svg = d3.select("body")
@@ -172,21 +172,21 @@
       svg.html(d3.select("#pattern").html());
 
       var projection = d3.geo.mercator()
-          .scale(5026)
-          .center([-85.9780985,35.8351170693])
+          .scale(58798.491069461255)
+          .center([-73.97773646720601,40.70609629174785])
           .translate([width/2,height/2]);
 
       var path = d3.geo.path()
           .projection(projection);
 
-      d3.json("../tennessee.topo.json",function(err,data){
+      d3.json("../nyc.split.topo.json",function(err,data){
 
-        var features = topojson.feature(data,data.objects.tennessee).features;
+        var features = topojson.feature(data,data.objects.nyc).features;
 
         var background = svg.append("g").attr("class","background");
 
         background.append("path")
-          .attr("d",path(topojson.mesh(data,data.objects.tennessee)));
+          .attr("d",path(topojson.mesh(data,data.objects.nyc)));
 
         var midground = svg.append("g").attr("class","midground");
 
@@ -209,8 +209,25 @@
         var info = svg.append("g"),
             lat = info.append("text").attr("x",24).attr("y",38),
             lng = info.append("text").attr("x",24).attr("y",55),
-            count = info.append("text").attr("x",width-24).attr("y",55).attr("class","count"),
-            status = info.append("text").attr("x",width-24).attr("y",38).attr("class","status");
+            count = info.append("text").attr("x",24).attr("y",112).attr("class","count"),
+            status = info.append("text").attr("x",24).attr("y",95).attr("class","status");
+
+        var uniqueCDs = d3.set(features.map(function(d){
+          return d.properties.CongDist;
+        })).values().map(function(d){
+          return +d;
+        });
+
+        function getOrder() {
+          var shuffled = shuffle(uniqueCDs.filter(function(cd){
+              return cd !== 8 && cd !== 5;
+            }));
+
+          shuffled.unshift(8);
+          shuffled.unshift(5);
+
+          return shuffled;
+        }
 
         features = features.map(function(d){
 
@@ -224,7 +241,7 @@
             }
           });
 
-          var outer = foreground.append("g").attr("class","TN-"+d.properties.CD);
+          var outer = foreground.append("g").attr("class","NY-"+d.properties.CongDist);
 
           var selection = outer.selectAll("g")
               .data(arcs)
@@ -241,7 +258,7 @@
             });
 
           return {
-            "district": d.properties.CD,
+            "district": +d.properties.CongDist,
             "numArcs": arcs.length,
             "outer": outer,
             "interior": midground.append("path").attr("d",path(d)),
@@ -318,11 +335,21 @@
 
           });
 
-          var featuresToCheck = shuffle(features.slice(0));
+          var order = getOrder();
+
+          console.log(order);
+
+          var featuresToCheck = features.slice(0).sort(function(a,b){
+            return order.indexOf(a.district) - order.indexOf(b.district);
+          });
+
+          console.log(featuresToCheck.map(function(f){
+            return f.district;
+          }));
 
           function checkFeature(feature) {
 
-            status.text("Checking TN-"+feature.district+"...");
+            status.text("Checking NY-"+feature.district+"...");
 
             feature.outer.each(function(){
               this.parentNode.appendChild(this);
@@ -333,7 +360,7 @@
 
             feature.selection.transition()
               .delay(function(d,i){
-                return Math.max(0,(i-1)*24)
+                return Math.max(0,(i-1)*16)
               })
               .style("opacity",1)
               .each("end",function(d,i){
@@ -373,7 +400,7 @@
 
           function end(district) {
             if (district) {
-              status.text("In TN-"+district);
+              status.text("In NY-"+district);
             } else {
               status.text("No matching district");
               count.text("");
