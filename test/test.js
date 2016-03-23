@@ -1,5 +1,6 @@
 var Wherewolf = require("../wherewolf.js"),
-  fs = require("fs"),
+    fs = require("fs"),
+    path = require("path"),
     assert = require("assert");
 
 var ww;
@@ -7,7 +8,7 @@ var point = [-74.005363,40.726760]; //wnyc office
 //options, point style, type of file
 
 //check topojson add
-fs.readFile("../examples/nyc/districts.json", "utf8", function(err, data){
+fs.readFile(path.join(__dirname,"../examples/nyc/districts.json"), "utf8", function(err, data){
   //console.log(data);
   data = JSON.parse(data);
     ww = Wherewolf();
@@ -25,7 +26,7 @@ fs.readFile("../examples/nyc/districts.json", "utf8", function(err, data){
 });
 
 //check geojson add
-fs.readFile("carlsjr_hardees/carlsjr_hardees.json", "utf8", function(err, data){
+fs.readFile(path.join(__dirname,"carlsjr_hardees/carlsjr_hardees.json"), "utf8", function(err, data){
 
   data = JSON.parse(data);
     ww = Wherewolf();
@@ -41,15 +42,15 @@ fs.readFile("carlsjr_hardees/carlsjr_hardees.json", "utf8", function(err, data){
   assert.deepEqual(ww.find(point,{layer: "carlsjr_hardees"}).name,"neither", ["layer option search error"]);
   assert.deepEqual(ww.find(point,{wholeFeature: true}).carlsjr_hardees.type, "Feature", ["whole feature search error"]);
   assert.deepEqual(ww.find(point,{wholeFeature: true, layer: "carlsjr_hardees"}).type, "Feature", ["whole feature + layer search error"]);
-  
+
 });
 
 //check point add
-fs.readFile("point.geojson", "utf8", function(err, data){
+fs.readFile(path.join(__dirname,"point.geojson"), "utf8", function(err, data){
 
   data = JSON.parse(data);
     ww = Wherewolf();
-    
+
     var lName = "wnycoffice";
     ww.add(lName, data, lName);
 
@@ -64,5 +65,5 @@ fs.readFile("point.geojson", "utf8", function(err, data){
   assert.deepEqual(ww.find(point,{layer: "wnycoffice"}).name,"office", ["layer option search error"]);
   assert.deepEqual(ww.find(point,{wholeFeature: true})[lName].type, "Feature", ["whole feature search error"]);
   assert.deepEqual(ww.find(point,{wholeFeature: true, layer: lName}).type, "Feature", ["whole feature + layer search error"]);
-  
+
 });

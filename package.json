@@ -1,10 +1,10 @@
 {
   "name": "wherewolf",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A client-side boundary service powered by GeoJSON or TopoJSON data.  Find which feature a point lies in.",
   "main": "wherewolf.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test/test.js"
   },
   "repository": {
     "type": "git",
