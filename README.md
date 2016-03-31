@@ -1,5 +1,7 @@
 ![Wherewolf](./wherewolf-logo.png)
 
+[![Build Status](https://travis-ci.org/veltman/wherewolf.svg?branch=master)](https://travis-ci.org/veltman/wherewolf)
+
 Wherewolf
 =========
 
