@@ -1,8 +1,8 @@
 (function(){
 
-  //Namespace for TopoJSON
+  //Namespace for TopoJSON and RBush
   //Is this a node module?
-  var tj,
+  var tj, rb,
       npm = typeof module === "object" && module.exports;
 
   //If it's a node module, require topojson
@@ -11,6 +11,18 @@
   //Otherwise, if topojson exists, save the reference
   } else if (typeof topojson !== "undefined" && "feature" in topojson) {
     tj = topojson;
+  }
+
+  //If it's a node module, require rbush
+  if (npm) {
+    try {
+      rb = require("rbush");
+    } catch (err) {
+      if (err.code !== "MODULE_NOT_FOUND") { throw err; }
+    }
+  //Otherwise, if rbush exists, save the reference
+  } else if (typeof rbush !== "undefined") {
+    rb = rbush;
   }
 
   //Factory function
@@ -25,6 +37,11 @@
   var Wherewolf = function() {
 
     this.layers = {};
+    
+    //Object for storing layer indices
+    if (rb) {
+      this.indices = {};
+    }
 
     return this;
 
@@ -80,6 +97,12 @@
 
     //Save features array as a layer
     this.layers[name] = features;
+    
+    //Add to index
+    if (rb) {
+      this.indices[name] = rb(9, ['.bbox[0][0]', '.bbox[0][1]', '.bbox[1][0]', '.bbox[1][1]']);
+      this.indices[name].load(features);
+    }
 
     return this;
 
@@ -124,6 +147,9 @@
     if (layerName in this.layers) {
       delete this.layers[layerName];
     }
+    if (rb && layerName in this.indices) {
+      delete this.indices[layerName];
+    }
 
     return this;
   };
@@ -165,6 +191,11 @@
 
     //If they want a specific layer, return that result
     if (options.layer) {
+      
+      //Has index?
+      if (rb && options.layer in this.indices) {
+        return _findLayer(point,_queryIndex(point,this.indices[options.layer]),options);
+      }
 
       //FIX: pass all options
       if (options.layer in this.layers) {
@@ -179,7 +210,11 @@
       results = {};
 
       for (var key in this.layers) {
-        results[key] = _findLayer(point,this.layers[key],options);
+        if (rb && key in this.indices) {
+          results[key] = _findLayer(point,_queryIndex(point,this.indices[key]),options);
+        } else {
+          results[key] = _findLayer(point,this.layers[key],options);
+        }
       }
 
     }
@@ -187,6 +222,16 @@
     return results;
 
   };
+  
+  function _queryIndex(point,index) {
+    //Use index to find short list
+    return index.search({
+      minX: point[0],
+      minY: point[1],
+      maxX: point[0],
+      maxY: point[1]
+    });
+  }
 
   //FIX: wholeFeature as all options
   //Find a point in a specific layer
