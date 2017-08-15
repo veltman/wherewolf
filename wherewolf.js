@@ -26,20 +26,25 @@
   }
 
   //Factory function
-  var ww = function() {
+  var ww = function(options) {
 
-    return new Wherewolf();
+    return new Wherewolf(options);
 
   };
 
   //Basic class
   //Start with empty layers
-  var Wherewolf = function() {
+  var Wherewolf = function(options) {
+    //Defaults
+    options = options || {};
 
     this.layers = {};
     
     //Object for storing layer indices
-    if (rb) {
+    if (options.index) {
+      if (!rb) {
+        throw new Error("You must include the RBush library (https://github.com/mourner/rbush) to enable indexing.");
+      }
       this.indices = {};
     }
 
@@ -99,8 +104,8 @@
     this.layers[name] = features;
     
     //Add to index
-    if (rb) {
-      this.indices[name] = rb(9, ['.bbox[0][0]', '.bbox[0][1]', '.bbox[1][0]', '.bbox[1][1]']);
+    if (this.indices) {
+      this.indices[name] = rb(16, ['.bbox[0][0]', '.bbox[0][1]', '.bbox[1][0]', '.bbox[1][1]']);
       this.indices[name].load(features);
     }
 
@@ -147,7 +152,7 @@
     if (layerName in this.layers) {
       delete this.layers[layerName];
     }
-    if (rb && layerName in this.indices) {
+    if (this.indices && layerName in this.indices) {
       delete this.indices[layerName];
     }
 
@@ -193,7 +198,7 @@
     if (options.layer) {
       
       //Has index?
-      if (rb && options.layer in this.indices) {
+      if (this.indices && options.layer in this.indices) {
         return _findLayer(point,_queryIndex(point,this.indices[options.layer]),options);
       }
 
@@ -210,7 +215,7 @@
       results = {};
 
       for (var key in this.layers) {
-        if (rb && key in this.indices) {
+        if (this.indices && key in this.indices) {
           results[key] = _findLayer(point,_queryIndex(point,this.indices[key]),options);
         } else {
           results[key] = _findLayer(point,this.layers[key],options);
