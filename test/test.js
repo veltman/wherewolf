@@ -23,6 +23,18 @@ fs.readFile(path.join(__dirname,"../examples/nyc/districts.json"), "utf8", funct
   assert.deepEqual(ww.find(point,{layer: "Borough (NYC)"}).name,"Manhattan", ["layer option search error"]);
   assert.deepEqual(ww.find(point,{wholeFeature: true})["Neighborhood (NYC)"].type, "Feature", ["whole feature search error"]);
   assert.deepEqual(ww.find(point,{wholeFeature: true, layer: "Borough (NYC)"}).type, "Feature", ["whole feature + layer search error"]);
+
+  // repeat with indexing enabled
+    ww = Wherewolf({index: true});
+    ww.addAll(data);
+
+  assert.deepEqual(ww.find({lat:point[1], lng:point[0]})["Borough (NYC)"].name,"Manhattan", ["find dict point error"]);
+  assert.deepEqual(ww.find(point)["Borough (NYC)"].name,"Manhattan", ["find array point error"]);
+
+  //find options
+  assert.deepEqual(ww.find(point,{layer: "Borough (NYC)"}).name,"Manhattan", ["layer option search error"]);
+  assert.deepEqual(ww.find(point,{wholeFeature: true})["Neighborhood (NYC)"].type, "Feature", ["whole feature search error"]);
+  assert.deepEqual(ww.find(point,{wholeFeature: true, layer: "Borough (NYC)"}).type, "Feature", ["whole feature + layer search error"]);
 });
 
 //check geojson add

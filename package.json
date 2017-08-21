@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/veltman/wherewolf",
   "dependencies": {
+    "rbush": "^2.0.1",
     "topojson": "~1.6.18"
   }
 }
